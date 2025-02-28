@@ -1,0 +1,16 @@
+{
+  "typescript.tsdk": "node_modules\\typescript\\lib",
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "cSpell.words": [
+    "dasboard",
+    "desig",
+    "doesnt",
+    "firstname",
+    "HRIS",
+    "lastname",
+    "middlename",
+    "shadcn",
+    "sonner"
+  ]
+}

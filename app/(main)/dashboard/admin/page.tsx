@@ -89,7 +89,7 @@ export default function HRISAdminDashboard() {
   );
 
   return (
-    <div className={`container mx-auto p-6 space-y-8 ${darkMode ? "dark" : ""}`}>
+    <div className={`container mx-auto p-6 space-y-8 ${darkMode ? "dark" : ""}`} suppressHydrationWarning>
       {/* Header with Quick Actions & Theme Toggle */}
       <header className="flex justify-between items-center mb-6">
         <div>
@@ -124,11 +124,31 @@ export default function HRISAdminDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card><CardHeader><CardTitle>New Hires</CardTitle></CardHeader><CardContent>5 <TrendingUp className="inline h-4 w-4 text-green-500" /></CardContent></Card>
-          <Card><CardHeader><CardTitle>Departures</CardTitle></CardHeader><CardContent>2 <TrendingDown className="inline h-4 w-4 text-red-500" /></CardContent></Card>
           <Card>
-            <CardHeader><CardTitle>Pending Approvals</CardTitle></CardHeader>
-            <CardContent>3</CardContent>
+            <CardHeader>
+              <CardTitle>
+                New Hires
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-4xl">
+              5 
+              <TrendingUp className="inline h-10 w-10 text-green-500" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Departures</CardTitle>
+            </CardHeader>
+            <CardContent className="text-4xl">
+              2 
+              <TrendingDown className="inline h-10 w-10 text-red-500" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Approvals</CardTitle>
+            </CardHeader>
+            <CardContent className="text-4xl">3</CardContent>
           </Card>
           <Card className="md:col-span-2 lg:col-span-4">
             <CardHeader><CardTitle>Employee Distribution by Department</CardTitle></CardHeader>

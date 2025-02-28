@@ -1,0 +1,205 @@
+"use client";
+
+import * as React from "react";
+import {
+  AudioWaveform,
+  BookOpen,
+  Bot,
+  Command,
+  Frame,
+  GalleryVerticalEnd,
+  Map,
+  PieChart,
+  Settings2,
+  SquareTerminal,
+} from "lucide-react";
+
+import { NavMain } from "@/components/nav-main";
+import { NavProjects } from "@/components/nav-projects";
+import { NavUser } from "@/components/nav-user";
+import { TeamSwitcher } from "@/components/team-switcher";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarRail,
+} from "@/components/ui/sidebar";
+import { usePathname } from "next/navigation";
+import { url } from "inspector";
+
+// Hook to get the current route
+function useCurrentRoute(path: string) {
+  const pathname = usePathname();
+  return pathname.startsWith(path);
+}
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const data = {
+    user: {
+      name: "JV Rafael",
+      email: "jvrafael@gmail.com",
+      avatar: 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Example_image.svg',
+    },
+    teams: [
+      {
+        name: "BFD Corp.",
+        logo: GalleryVerticalEnd,
+        plan: "HR Department",
+      },
+      {
+        name: "Acme Corp.",
+        logo: AudioWaveform,
+        plan: "Startup",
+      },
+      {
+        name: "Evil Corp.",
+        logo: Command,
+        plan: "Free",
+      },
+    ],
+    navMain: [
+      {
+        title: "Dashboard",
+        url: "#",
+        icon: SquareTerminal,
+        isActive: useCurrentRoute("/dashboard/admin") ? true : false,
+        items: [
+          {
+            title: "Admin",
+            url: "/dashboard/admin",
+          },
+          {
+            title: "Employee",
+            url: "#",
+          },
+          {
+            title: "Guest",
+            url: "#",
+          },
+        ],
+      },
+      {
+        title: "User Management",
+        url: "#",
+        icon: Bot,
+        isActive: useCurrentRoute("/users") ? true : false,
+        items: [
+          {
+            title: "Users",
+            url: "/users",
+          },
+          {
+            title: "Activity Log",
+            url: "#",
+          },
+        ],
+      },
+      {
+        title: "Employee Management",
+        url: "#",
+        icon: BookOpen,
+        isActive: useCurrentRoute("/employees") ? true : false,
+        items: [
+          {
+            title: "Employees",
+            url: "/employees",
+          },
+          {
+            title: "Attendance",
+            url: "#",
+          },
+          {
+            title: "Leave",
+            url: "#",
+          },
+          {
+            title: "Salary",
+            url: "#",
+          },
+        ],
+      },
+      {
+        title: "Payroll Management",
+        url: "#",
+        icon: BookOpen,
+        isActive: useCurrentRoute("/payroll") ? true : false,
+        items: [
+          {
+            title: "Payroll",
+            url: "/payroll",
+          },
+          {
+            title: "Payroll Items",
+            url: "/payroll/items",
+          },
+          {
+            title: "Leave",
+            url: "#",
+          },
+          {
+            title: "Salary",
+            url: "#",
+          },
+        ],
+      },
+      {
+        title: "Settings",
+        url: "#",
+        icon: Settings2,
+        isActive: useCurrentRoute("/settings") ? true : false,
+        items: [
+          {
+            title: "General",
+            url: "#",
+          },
+          {
+            title: "Team",
+            url: "#",
+          },
+          {
+            title: "Billing",
+            url: "#",
+          },
+          {
+            title: "Limits",
+            url: "#",
+          },
+        ],
+      },
+    ],
+    projects: [
+      {
+        name: "Design Engineering",
+        url: "#",
+        icon: Frame,
+      },
+      {
+        name: "Sales & Marketing",
+        url: "#",
+        icon: PieChart,
+      },
+      {
+        name: "Travel",
+        url: "#",
+        icon: Map,
+      },
+    ],
+  };
+
+  return (
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader>
+        <TeamSwitcher teams={data.teams} />
+      </SidebarHeader>
+      <SidebarContent>
+        <NavMain items={data.navMain} />
+        <NavProjects projects={data.projects} />
+      </SidebarContent>
+      <SidebarFooter>
+        <NavUser />
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
+  );
+}
