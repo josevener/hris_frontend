@@ -26,7 +26,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { usePathname } from "next/navigation";
-import { url } from "inspector";
 
 // Hook to get the current route
 function useCurrentRoute(path: string) {
@@ -99,7 +98,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         title: "Employee Management",
         url: "#",
         icon: BookOpen,
-        isActive: useCurrentRoute("/employees") ? true : false,
+        isActive: useCurrentRoute("/employees") || useCurrentRoute("/salary") ? true : false,
         items: [
           {
             title: "Employees",
@@ -115,7 +114,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
           {
             title: "Salary",
-            url: "#",
+            url: "/salary",
           },
         ],
       },
@@ -134,11 +133,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             url: "/payroll/items",
           },
           {
-            title: "Leave",
-            url: "#",
-          },
-          {
-            title: "Salary",
+            title: "Payslips",
             url: "#",
           },
         ],

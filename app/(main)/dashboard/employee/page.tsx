@@ -8,7 +8,6 @@ import {
   XAxis, 
   YAxis, 
   Tooltip, 
-  Legend, 
   PieChart, 
   Pie, 
   Cell,
@@ -46,7 +45,6 @@ import {
   Bell 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { ModeToggle } from "@/components/mode-toggle";
 
@@ -72,7 +70,7 @@ const employeeTableData = [
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300"];
 
 export default function HRISAdminDashboard() {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode] = useState(false);
   const [deptFilter, setDeptFilter] = useState("All");
   const [notifications] = useState([
     { id: 1, msg: "New leave request from John Doe", time: "10 mins ago" },

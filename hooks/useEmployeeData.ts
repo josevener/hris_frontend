@@ -12,7 +12,7 @@ import {
   fetchUsers,
   fetchDepartments,
   fetchDesignations,
-} from "../services/api";
+} from "../services/api/apiEmployee";
 
 interface UseEmployeeData {
   employees: Employee[];

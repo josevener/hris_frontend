@@ -1,14 +1,30 @@
+// export interface User {
+//   id: number;
+//   lastname: string;
+//   firstname: string;
+//   middlename: string;
+//   extension: string;
+//   role_name: string;
+//   email: string;
+//   profile_image: string;
+//   phone_number: string;
+//   company_id_number: string;
+// }
+
 export interface User {
   id: number;
   lastname: string;
   firstname: string;
   middlename: string;
   extension: string;
-  role_name: string;
   email: string;
-  profile_image: string;
-  phone_number: string;
   company_id_number: string;
+  role_name: string;
+  profile_image?: string;
+  phone_number?: string;
+  created_at: string;
+  updated_at: string;
+  password?: string;
 }
 
 export interface Department {

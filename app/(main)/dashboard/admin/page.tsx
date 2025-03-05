@@ -8,7 +8,6 @@ import {
   XAxis, 
   YAxis, 
   Tooltip, 
-  Legend, 
   PieChart, 
   Pie, 
   Cell,
@@ -46,9 +45,9 @@ import {
   Bell 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { ModeToggle } from "@/components/mode-toggle";
+import { NumberTicker } from "@/components/magicui/number-ticker";
 
 // Sample Data
 const workforceData = { active: 180, onLeave: 10, resigned: 5 };
@@ -72,7 +71,7 @@ const employeeTableData = [
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300"];
 
 export default function HRISAdminDashboard() {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode] = useState(false);
   const [deptFilter, setDeptFilter] = useState("All");
   const [notifications] = useState([
     { id: 1, msg: "New leave request from John Doe", time: "10 mins ago" },
@@ -130,32 +129,47 @@ export default function HRISAdminDashboard() {
                 New Hires
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-4xl">
-              5 
-              <TrendingUp className="inline h-10 w-10 text-green-500" />
+            <CardContent>
+              <div className="flex items-center justify-between gap-2">
+                <NumberTicker
+                  value={55}
+                  className="whitespace-pre-wrap text-8xl font-medium tracking-tighter text-black dark:text-white"
+                />
+                <TrendingUp className="inline h-20 w-20 text-green-500" />
+              </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
               <CardTitle>Departures</CardTitle>
             </CardHeader>
-            <CardContent className="text-4xl">
-              2 
-              <TrendingDown className="inline h-10 w-10 text-red-500" />
+            <CardContent> 
+              <div className="flex items-center justify-between gap-2">
+                <NumberTicker
+                  value={25}
+                  className="whitespace-pre-wrap text-8xl font-medium tracking-tighter text-black dark:text-white"
+                />
+                <TrendingDown className="inline h-20 w-20 text-red-500" />
+              </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
               <CardTitle>Pending Approvals</CardTitle>
             </CardHeader>
-            <CardContent className="text-4xl">3</CardContent>
+            <CardContent className="text-4xl">
+              <NumberTicker
+                value={20}
+                className="whitespace-pre-wrap text-8xl font-medium tracking-tighter text-black dark:text-white"
+              />
+            </CardContent>
           </Card>
           <Card className="md:col-span-2 lg:col-span-4">
             <CardHeader><CardTitle>Employee Distribution by Department</CardTitle></CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
-                  <Pie data={pieChartData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label>
+                  <Pie data={pieChartData} cx="50%" cy="50%" outerRadius={100} dataKey="value" label>
                     {pieChartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
@@ -184,9 +198,24 @@ export default function HRISAdminDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card><CardHeader><CardTitle>Leave Requests</CardTitle></CardHeader><CardContent>Pending: 4 | Approved: 10 | Denied: 2</CardContent></Card>
-          <Card><CardHeader><CardTitle>Upcoming Events</CardTitle></CardHeader><CardContent>2 Holidays, 3 Birthdays</CardContent></Card>
-          <Card><CardHeader><CardTitle>Overtime Requests</CardTitle></CardHeader><CardContent>Pending: 5 | Approved: 8</CardContent></Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Leave Requests</CardTitle>
+              </CardHeader>
+            <CardContent>Pending: 4 | Approved: 10 | Denied: 2</CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Upcoming Events</CardTitle>
+            </CardHeader>
+              <CardContent>2 Holidays, 3 Birthdays</CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Overtime Requests</CardTitle>
+            </CardHeader>
+              <CardContent>Pending: 5 | Approved: 8</CardContent>
+          </Card>
         </div>
       </section>
 
@@ -194,7 +223,15 @@ export default function HRISAdminDashboard() {
       <section className="space-y-6">
         <h2 className="text-2xl font-semibold">Payroll & Salary Insights</h2>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card><CardHeader><CardTitle>Total Payroll</CardTitle></CardHeader><CardContent><DollarSign className="inline h-4 w-4" /> 450,000</CardContent></Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Total Payroll</CardTitle>
+            </CardHeader>
+              <CardContent>
+                <DollarSign className="inline h-4 w-4" />
+                450,000
+              </CardContent>
+          </Card>
           <Card><CardHeader><CardTitle>Pending Payslips</CardTitle></CardHeader><CardContent>6</CardContent></Card>
           <Card><CardHeader><CardTitle>Deductions & Bonuses</CardTitle></CardHeader><CardContent>Ded: $5k | Bon: $10k</CardContent></Card>
           <Card className="lg:col-span-4">

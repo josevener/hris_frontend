@@ -42,7 +42,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   };
 
   return (
-    <DialogContent className="sm:max-w-[900px] w-[90vw] bg-white dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700">
+    <DialogContent className="sm:max-w-[800px] w-[80vw] bg-white dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700">
       <DialogHeader>
         <DialogTitle className="dark:text-white">{isEditMode ? "Edit Employee" : "Add New Employee"}</DialogTitle>
         <DialogDescription className="dark:text-gray-300">

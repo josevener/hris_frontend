@@ -20,29 +20,29 @@ export function LoginForm({
   const router = useRouter();
 
   // Fetch CSRF token on mount
-  // useEffect(() => {
-  //   const fetchCsrfToken = async () => {
-  //     try {
-  //       const response = await fetch("http://127.0.0.1:8000/sanctum/csrf-cookie", {
-  //         method: "GET",
-  //         credentials: "include", // Include cookies
-  //       });
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/sanctum/csrf-cookie", {
+          method: "GET",
+          credentials: "include", // Include cookies
+        });
 
-  //       if (!response.ok) {
-  //         throw new Error("Failed to fetch CSRF token");
-  //       }
+        if (!response.ok) {
+          throw new Error("Failed to fetch CSRF token");
+        }
 
-  //       // CSRF token is set in cookies; no need to extract it explicitly
-  //       setCsrfToken("fetched"); // Just flag it as fetched
-  //       console.error("Fetching CSRF token:", response);
-  //     } catch (err) {
-  //       console.error("Error fetching CSRF token:", err);
-  //       toast.error("Failed to initialize login session");
-  //     }
-  //   };
+        // CSRF token is set in cookies; no need to extract it explicitly
+        setCsrfToken("fetched"); // Just flag it as fetched
+        console.error("Fetching CSRF token:", response);
+      } catch (err) {
+        console.error("Error fetching CSRF token:", err);
+        toast.error("Failed to initialize login session");
+      }
+    };
 
-  //   fetchCsrfToken();
-  // }, []);
+    fetchCsrfToken();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

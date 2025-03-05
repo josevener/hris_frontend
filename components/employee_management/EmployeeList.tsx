@@ -11,7 +11,7 @@ import EmployeeForm from "./EmployeeForm";
 import DeleteConfirmation from "./DeleteConfirmation";
 import { Employee, SortKey, UserRole } from "@/types/employee";
 import { useEmployeeData } from "@/hooks/useEmployeeData";
-import { createEmployee, deleteEmployee, updateEmployee } from "@/services/api";
+import { createEmployee, deleteEmployee, fetchEmployees, updateEmployee } from "@/services/api/apiEmployee";
 import { EmployeeTable } from "./EmployeeTable";
 
 const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => {
@@ -87,6 +87,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       });
       toast.success("Employee added successfully");
       if (userRole === "Employee") toast.info("Your profile has been submitted for review");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to add employee");
       console.error("Add error:", err);
@@ -105,31 +106,25 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       const payload = {
         company_id_number: selectedEmployee.company_id_number,
         birthdate: selectedEmployee.birthdate || null,
-        reports_to: selectedEmployee.reports_to === "none" ? null : selectedEmployee.reports_to,
-        gender: selectedEmployee.gender === "none" ? null : selectedEmployee.gender,
+        reports_to: selectedEmployee.reports_to === "N/A" ? null : selectedEmployee.reports_to,
+        gender: selectedEmployee.gender === "N/A" ? null : selectedEmployee.gender,
         user_id: selectedEmployee.user_id,
         department_id: selectedEmployee.department_id,
         designation_id: selectedEmployee.designation_id,
       };
 
-      const updatedEmployee = await updateEmployee(selectedEmployee.id, payload);
-      const enrichedUpdatedEmployee: Employee = {
-        ...updatedEmployee,
-        user: users.find((u) => u.id === selectedEmployee.user_id) || selectedEmployee.user,
-        department: departments.find((d) => d.id === selectedEmployee.department_id),
-        designation: designations.find((des) => des.id === selectedEmployee.designation_id),
-        status: updatedEmployee.status || selectedEmployee.status,
-        isActive: updatedEmployee.isActive !== undefined ? updatedEmployee.isActive : selectedEmployee.isActive,
-        created_at: updatedEmployee.created_at || selectedEmployee.created_at,
-      };
+      await updateEmployee(selectedEmployee.id, payload);
 
-      setEmployees((prev) =>
-        prev.map((emp) => (emp.id === enrichedUpdatedEmployee.id ? enrichedUpdatedEmployee : emp))
-      );
+      const employees = await fetchEmployees();
+      
+      setEmployees(employees);
+
       setIsEditModalOpen(false);
       setSelectedEmployee(null);
       toast.success("Employee updated successfully");
       if (userRole === "Employee") toast.info("Your profile has been updated");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to update employee");
       console.error("Update error:", err);
@@ -149,6 +144,8 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       setIsDeleteModalOpen(false);
       setSelectedEmployee(null);
       toast.success("Employee deleted successfully");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to delete employee");
       console.error("Delete error:", err);
@@ -263,7 +260,10 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
         loading={loading}
         sortConfig={sortConfig}
         handleSort={handleSort}
-        handleEdit={setSelectedEmployee}
+        handleEdit={(employee) => {
+          setSelectedEmployee(employee);
+          setIsEditModalOpen(true);
+        }}
         handleDelete={(employee) => { setSelectedEmployee(employee); setIsDeleteModalOpen(true); }}
         handleViewProfile={handleViewProfile}
         userRole={userRole}
