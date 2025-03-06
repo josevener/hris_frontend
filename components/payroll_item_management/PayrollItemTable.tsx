@@ -4,6 +4,7 @@ import { UserRole } from "@/types/employee";
 import PayrollItemActions from "./PayrollItemActions";
 import { PayrollItem } from "@/types/payroll";
 import { format } from "date-fns";
+import { Button } from "../ui/button";
 
 interface PayrollItemTableProps {
   payrollItems: PayrollItem[];
@@ -72,6 +73,9 @@ const PayrollItemTable: React.FC<PayrollItemTableProps> = ({
               <TableCell className="dark:text-gray-200">{item.category}</TableCell>
               <TableCell className="dark:text-gray-200">{formatCurrency(item.amount)}</TableCell>
               <TableCell className="text-center">
+                {/* <div>
+                  <Button onClick={() => handleEdit(item)}>View</Button>
+                </div> */}
                 <PayrollItemActions
                   payrollItem={item}
                   userRole={userRole}

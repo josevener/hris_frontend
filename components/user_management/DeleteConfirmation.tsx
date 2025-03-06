@@ -14,6 +14,7 @@ const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({ onConfirm, onCa
       <DialogTitle className="dark:text-white">Confirm Deletion</DialogTitle>
       <DialogDescription className="dark:text-gray-300">
         <span>Are you sure you want to delete this record?</span>
+        <br />
         <span>This action cannot be undone.</span>
       </DialogDescription>
     </DialogHeader>
