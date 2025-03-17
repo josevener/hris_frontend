@@ -1,4 +1,3 @@
-import { fetchEmployees } from "./apiEmployee";
 import { Employee, Salary } from "@/types/salary";
 
 const BASE_URL = "http://127.0.0.1:8000/api";

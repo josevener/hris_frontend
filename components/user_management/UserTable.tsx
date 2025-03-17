@@ -73,9 +73,9 @@ const UserTable: React.FC<UserTableProps> = ({
             </TableRow>
           ))
         ) : users.length > 0 ? (
-          users.map((user) => (
+          users.map((user, index) => (
             <TableRow key={user.id} className="dark:bg-gray-800 dark:hover:bg-gray-700">
-              <TableCell className="dark:text-gray-200">{user.id}</TableCell>
+              <TableCell className="dark:text-gray-200">{index + 1}</TableCell>
               <TableCell className="dark:text-gray-200">{getFullName(user)}</TableCell>
               <TableCell className="dark:text-gray-200">{user.email}</TableCell>
               <TableCell className="dark:text-gray-200">{user.role_name}</TableCell>

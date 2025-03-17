@@ -4,7 +4,6 @@ import { UserRole } from "@/types/employee";
 import PayrollItemActions from "./PayrollItemActions";
 import { PayrollItem } from "@/types/payroll";
 import { format } from "date-fns";
-import { Button } from "../ui/button";
 
 interface PayrollItemTableProps {
   payrollItems: PayrollItem[];
@@ -27,14 +26,23 @@ const PayrollItemTable: React.FC<PayrollItemTableProps> = ({
     const employee = payrollItem.employee;
     if (!employee || !employee.user) {
       console.warn(`Missing employee or user data for payroll item ID ${payrollItem.id}. Employee ID: ${payrollItem.employee_id}`, payrollItem);
-      return `Employee #${payrollItem.employee_id}`;
+      return `All Employees`;
     }
     const { user } = employee;
     return `${user.firstname} ${user.middlename ? user.middlename[0] + "." : ""} ${user.lastname} ${user.extension || ""}`.trim();
   };
 
   const formatCurrency = (value: number | undefined): string => {
-    return value !== undefined ? value.toLocaleString("en-US", { maximumFractionDigits: 2 }) : "N/A";
+    return value !== undefined
+      ? value.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })
+      : "N/A";
+  };
+
+  const formatPeriod = (item: PayrollItem): string => {
+    if (item.start_date && item.end_date) {
+      return `${format(new Date(item.start_date), "MMM dd, yyyy")} to ${format(new Date(item.end_date), "MMM dd, yyyy")}`;
+    }
+    return "Not Assigned";
   };
 
   return (
@@ -42,7 +50,7 @@ const PayrollItemTable: React.FC<PayrollItemTableProps> = ({
       <TableHeader>
         <TableRow className="dark:bg-gray-700">
           <TableHead className="w-[50px] dark:text-gray-200">ID</TableHead>
-          <TableHead className="dark:text-gray-200">Payroll Date</TableHead>
+          <TableHead className="dark:text-gray-200">Payroll Period</TableHead>
           <TableHead className="dark:text-gray-200">Employee</TableHead>
           <TableHead className="dark:text-gray-200">Type</TableHead>
           <TableHead className="dark:text-gray-200">Category</TableHead>
@@ -67,15 +75,12 @@ const PayrollItemTable: React.FC<PayrollItemTableProps> = ({
           payrollItems.map((item, index) => (
             <TableRow key={item.id} className="dark:bg-gray-800 dark:hover:bg-gray-700">
               <TableCell className="dark:text-gray-200">{index + 1}</TableCell>
-              <TableCell className="dark:text-gray-200">{item.payroll ? format(new Date(item.payroll.pay_date), "MMMM dd, yyyy") : "N/A"}</TableCell>
+              <TableCell className="dark:text-gray-200">{formatPeriod(item)}</TableCell>
               <TableCell className="dark:text-gray-200">{getFullName(item)}</TableCell>
               <TableCell className="dark:text-gray-200">{item.type}</TableCell>
               <TableCell className="dark:text-gray-200">{item.category}</TableCell>
               <TableCell className="dark:text-gray-200">{formatCurrency(item.amount)}</TableCell>
               <TableCell className="text-center">
-                {/* <div>
-                  <Button onClick={() => handleEdit(item)}>View</Button>
-                </div> */}
                 <PayrollItemActions
                   payrollItem={item}
                   userRole={userRole}

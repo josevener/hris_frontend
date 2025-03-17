@@ -15,7 +15,7 @@ import UserTable from "./UserTable";
 type SortKey = keyof User;
 
 const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => {
-  const { users, loading, error, addUser, editUser, removeUser } = useUserData();
+  const { users, pagination, loading, error, fetchUsers, addUser, editUser, removeUser } = useUserData();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: "asc" | "desc" } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,13 +38,18 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const itemsPerPage = 6;
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchUsers(page);
+  };
 
   const handleAddUser = async () => {
     setIsSaving(true);
     try {
       const payload = { ...newUser };
-      delete payload.confirmPassword; // Remove confirmPassword from payload
+      delete payload.confirmPassword;
       await addUser(payload);
       setIsAddModalOpen(false);
       setNewUser({
@@ -75,7 +80,7 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
     setIsSaving(true);
     try {
       const payload = { ...selectedUser };
-      delete payload.confirmPassword; // Remove confirmPassword from payload
+      delete payload.confirmPassword;
       await editUser(selectedUser.id, payload);
       setIsEditModalOpen(false);
       setSelectedUser(null);
@@ -118,7 +123,7 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
   };
 
   const filteredAndSortedUsers = useMemo(() => {
-    let result = [...users];
+    let result = [...users]; // `users` is the `data` array from Laravel
 
     if (searchTerm) {
       result = result.filter((user) =>
@@ -128,7 +133,7 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
           user.middlename || "",
           user.extension || "",
           user.email,
-          user.company_id_number,
+          user.company_id_number || "",
           user.role_name,
           user.phone_number || "",
         ]
@@ -162,12 +167,7 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
     return result;
   }, [users, searchTerm, sortConfig]);
 
-  const paginatedUsers = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredAndSortedUsers.slice(start, start + itemsPerPage);
-  }, [filteredAndSortedUsers, currentPage]);
-
-  const totalPages = Math.ceil(filteredAndSortedUsers.length / itemsPerPage);
+  const totalPages = pagination.last_page;
 
   return (
     <div className="p-6 flex flex-col items-center bg-background text-foreground">
@@ -192,7 +192,7 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
       {error && <div className="text-red-500 mb-4">{error}</div>}
 
       <UserTable
-        users={paginatedUsers}
+        users={filteredAndSortedUsers}
         loading={loading}
         handleEdit={(user) => {
           setSelectedUser(user);
@@ -212,16 +212,16 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
         <div className="mt-4 flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
+            onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+            disabled={currentPage === 1 || loading}
           >
             Previous
           </Button>
           <span>Page {currentPage} of {totalPages}</span>
           <Button
             variant="outline"
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
+            onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+            disabled={currentPage === totalPages || loading}
           >
             Next
           </Button>

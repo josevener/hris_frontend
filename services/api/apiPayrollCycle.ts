@@ -1,11 +1,11 @@
-import { Payroll, PayrollItem } from "@/types/payroll";
+import { PayrollCycle } from "@/types/payroll";
 
 const BASE_URL = "http://127.0.0.1:8000/api";
 
 const getAuthToken = () =>
   localStorage.getItem("auth_token") || "your-sanctum-token-here";
 
-const apiFetch = async <T>(
+export const apiFetch = async <T>(
   endpoint: string,
   method: string,
   body?: any
@@ -38,23 +38,20 @@ interface PaginatedResponse<T> {
   total: number;
 }
 
-export const fetchPayrolls = (page: number = 1, perPage: number = 10) =>
-  apiFetch<PaginatedResponse<Payroll>>(
-    `/payroll?page=${page}&per_page=${perPage}`,
+export const fetchPayrollCycles = (page: number = 1, perPage: number = 10) =>
+  apiFetch<PaginatedResponse<PayrollCycle>>(
+    `/payroll-cycle?page=${page}&per_page=${perPage}`,
     "GET"
   );
 
-export const fetchPayrollItemsByPayrollId = (payrollId?: number) =>
-  apiFetch<PayrollItem[]>(
-    payrollId ? `/payroll/${payrollId}/items` : "/payroll-items",
-    "GET"
-  );
+export const fetchPayrollCycleById = (cycleId: number) =>
+  apiFetch<PayrollCycle>(`/payroll-cycle/${cycleId}`, "GET");
 
-export const createPayroll = (data: Partial<Payroll>) =>
-  apiFetch<Payroll>("/payroll", "POST", data);
+export const createPayrollCycle = (data: Partial<PayrollCycle>) =>
+  apiFetch<PayrollCycle>("/payroll-cycle", "POST", data);
 
-export const updatePayroll = (id: number, data: Partial<Payroll>) =>
-  apiFetch<Payroll>(`/payroll/${id}`, "PUT", data);
+export const updatePayrollCycle = (id: number, data: Partial<PayrollCycle>) =>
+  apiFetch<PayrollCycle>(`/payroll-cycle/${id}`, "PUT", data);
 
-export const deletePayroll = (id: number) =>
-  apiFetch<void>(`/payroll/${id}`, "DELETE");
+export const deletePayrollCycle = (id: number) =>
+  apiFetch<void>(`/payroll-cycle/${id}`, "DELETE");

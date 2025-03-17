@@ -21,8 +21,10 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedPayrollItem, setSelectedPayrollItem] = useState<PayrollItem | null>(null);
   const [newPayrollItem, setNewPayrollItem] = useState<Partial<PayrollItem>>({
-    payroll_id: 0,
-    employee_id: 0,
+    scope: "specific",
+    employee_id: undefined,
+    start_date: "",
+    end_date: "",
     type: "earning",
     category: "",
     amount: 0,
@@ -31,12 +33,24 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
   const [isDeleting, setIsDeleting] = useState(false);
 
   const validatePayrollItem = (item: Partial<PayrollItem>): boolean => {
-    if (!item.payroll_id || item.payroll_id === 0) {
-      toast.error("Payroll is required.");
+    if (!item.scope) {
+      toast.error("Scope is required.");
       return false;
     }
-    if (!item.employee_id || item.employee_id === 0) {
-      toast.error("Employee is required.");
+    if (item.scope === "specific" && (!item.employee_id || item.employee_id === 0)) {
+      toast.error("Employee is required for specific scope.");
+      return false;
+    }
+    if (!item.start_date) {
+      toast.error("Start date is required.");
+      return false;
+    }
+    if (!item.end_date) {
+      toast.error("End date is required.");
+      return false;
+    }
+    if (item.start_date && item.end_date && new Date(item.start_date) > new Date(item.end_date)) {
+      toast.error("Start date must be before end date.");
       return false;
     }
     if (!item.type) {
@@ -61,8 +75,10 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
       await addPayrollItem(newPayrollItem);
       setIsAddModalOpen(false);
       setNewPayrollItem({
-        payroll_id: 0,
-        employee_id: 0,
+        scope: "specific",
+        employee_id: undefined,
+        start_date: "",
+        end_date: "",
         type: "earning",
         category: "",
         amount: 0,
@@ -123,6 +139,8 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
           item.type,
           item.category,
           String(item.amount || ""),
+          item.start_date || "",
+          item.end_date || "",
         ]
           .join(" ")
           .toLowerCase()
@@ -136,7 +154,7 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
     <div className="p-6 flex flex-col items-center bg-background text-foreground">
       <Toaster position="top-right" richColors />
       <div className="w-full max-w-6xl mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold">Payroll Item</h1>
+        <h1 className="text-2xl font-bold">Payroll Items</h1>
         <div className="flex gap-4">
           <Input
             placeholder="Search payroll items..."

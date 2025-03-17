@@ -6,16 +6,12 @@ import {
   BookOpen,
   Bot,
   Command,
-  Frame,
   GalleryVerticalEnd,
-  Map,
-  PieChart,
   Settings2,
   SquareTerminal,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
-import { NavProjects } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
 import { TeamSwitcher } from "@/components/team-switcher";
 import {
@@ -134,51 +130,47 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           },
           {
             title: "Payslips",
-            url: "#",
+            url: "/payroll/payslips",
           },
         ],
       },
-      {
-        title: "Settings",
-        url: "#",
-        icon: Settings2,
-        isActive: useCurrentRoute("/settings") ? true : false,
-        items: [
-          {
-            title: "General",
-            url: "#",
-          },
-          {
-            title: "Team",
-            url: "#",
-          },
-          {
-            title: "Billing",
-            url: "#",
-          },
-          {
-            title: "Limits",
-            url: "#",
-          },
-        ],
-      },
-    ],
-    projects: [
-      {
-        name: "Design Engineering",
-        url: "#",
-        icon: Frame,
-      },
-      {
-        name: "Sales & Marketing",
-        url: "#",
-        icon: PieChart,
-      },
-      {
-        name: "Travel",
-        url: "#",
-        icon: Map,
-      },
+     {
+      title: "Settings",
+      url: "#",
+      icon: Settings2,
+      isActive: useCurrentRoute("/settings"),
+      items: [
+        {
+          title: "General",
+          url: "/settings/general",
+        },
+        {
+          title: "Payroll Cycle",
+          url: "/settings/payroll/cycle",
+        },
+        {
+          title: "Account",
+          url: "/settings/account",
+        },
+        {
+          title: "Security & Privacy",
+          url: "/settings/security",
+        },
+        {
+          title: "Notifications",
+          url: "/settings/notifications",
+        },
+        {
+          title: "Appearance",
+          url: "/settings/appearance",
+        },
+        {
+          title: "Integrations",
+          url: "/settings/integrations",
+        },
+      ],
+}
+
     ],
   };
 
@@ -187,13 +179,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
+
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
       </SidebarContent>
+
       <SidebarFooter>
         <NavUser />
       </SidebarFooter>
+      
       <SidebarRail />
     </Sidebar>
   );

@@ -1,50 +1,65 @@
 import { User } from "@/types/employee";
 
-const BASE_URL = "http://127.0.0.1:8000/api";
+interface PaginatedResponse {
+  data: User[];
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
 
-const getAuthToken = () =>
-  localStorage.getItem("auth_token") || "your-sanctum-token-here";
-
-const apiFetch = async <T>(
-  endpoint: string,
-  method: string,
-  body?: any
-): Promise<T> => {
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    method,
+export const fetchUsers = async (
+  page: number = 1
+): Promise<PaginatedResponse> => {
+  const response = await fetch(`http://127.0.0.1:8000/api/users?page=${page}`, {
+    method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${getAuthToken()}`,
       Accept: "application/json",
+      Authorization: `Bearer ${localStorage.getItem("auth_token") || "your-token"}`,
     },
-    body: body ? JSON.stringify(body) : undefined,
-    cache: "no-store",
   });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(
-      errorData.message || `HTTP error! Status: ${response.status}`
-    );
-  }
-
+  if (!response.ok) throw new Error("Failed to fetch users");
   return response.json();
 };
 
-// Fetch all users
-export const fetchUsers = () => apiFetch<User[]>("/users", "GET");
+export const createUser = async (user: Partial<User>): Promise<User> => {
+  const response = await fetch("http://127.0.0.1:8000/api/users", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${localStorage.getItem("auth_token") || "your-token"}`,
+    },
+    body: JSON.stringify(user),
+  });
+  if (!response.ok) throw new Error("Failed to create user");
+  return response.json();
+};
 
-// Fetch a single user by ID
-export const fetchUser = (id: number) => apiFetch<User>(`/users/${id}`, "GET");
+export const updateUser = async (
+  id: number,
+  user: Partial<User>
+): Promise<User> => {
+  const response = await fetch(`http://127.0.0.1:8000/api/users/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${localStorage.getItem("auth_token") || "your-token"}`,
+    },
+    body: JSON.stringify(user),
+  });
+  if (!response.ok) throw new Error("Failed to update user");
+  return response.json();
+};
 
-// Create a new user
-export const createUser = (data: Partial<User>) =>
-  apiFetch<User>("/users", "POST", data);
-
-// Update an existing user
-export const updateUser = (id: number, data: Partial<User>) =>
-  apiFetch<User>(`/users/${id}`, "PUT", data);
-
-// Delete a user
-export const deleteUser = (id: number) =>
-  apiFetch<void>(`/users/${id}`, "DELETE");
+export const deleteUser = async (id: number): Promise<void> => {
+  const response = await fetch(`http://127.0.0.1:8000/api/users/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("auth_token") || "your-token"}`,
+    },
+  });
+  if (!response.ok) throw new Error("Failed to delete user");
+};

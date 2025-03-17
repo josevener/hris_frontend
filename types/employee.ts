@@ -1,16 +1,3 @@
-// export interface User {
-//   id: number;
-//   lastname: string;
-//   firstname: string;
-//   middlename: string;
-//   extension: string;
-//   role_name: string;
-//   email: string;
-//   profile_image: string;
-//   phone_number: string;
-//   company_id_number: string;
-// }
-
 export interface User {
   id: number;
   lastname: string;

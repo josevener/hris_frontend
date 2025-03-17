@@ -8,13 +8,13 @@ import {
 import { fetchEmployees } from "@/services/api/apiEmployee";
 import { fetchPayrolls } from "@/services/api/apiPayroll";
 import { toast } from "sonner";
-import { Payroll, PayrollItem } from "@/types/payroll";
+import { Payroll, PayrollItem, PaginatedResponse } from "@/types/payroll";
 import { Employee } from "@/types/salary";
 
 export const usePayrollItemData = () => {
   const [payrollItems, setPayrollItems] = useState<PayrollItem[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [payrolls, setPayrolls] = useState<Payroll[]>([]);
+  const [payrolls, setPayrolls] = useState<Payroll[]>([]); // Still Payroll[], we’ll use .data
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,16 +34,20 @@ export const usePayrollItemData = () => {
         console.log("Fetched employees:", employeeData);
         console.log("Fetched payrolls:", payrollData);
 
-        // Enrich payroll items with employee and payroll data
         const enrichedPayrollItems = payrollItemData.map((item) => ({
           ...item,
-          employee: employeeData.find((emp) => emp.id === item.employee_id),
-          payroll: payrollData.find((p) => p.id === item.payroll_id),
+          employee: Array.isArray(employeeData)
+            ? employeeData.find((emp) => emp.id === item.employee_id)
+            : undefined,
+          payroll:
+            payrollData.data && item.payroll_id
+              ? payrollData.data.find((p: Payroll) => p.id === item.payroll_id)
+              : undefined,
         }));
 
         setPayrollItems(enrichedPayrollItems);
-        setEmployees(employeeData);
-        setPayrolls(payrollData);
+        setEmployees(Array.isArray(employeeData) ? employeeData : []);
+        setPayrolls(payrollData.data || []);
       } catch (err: any) {
         setError(err.message || "Failed to fetch payroll item data.");
         toast.error(err.message || "Failed to fetch payroll item data.");
@@ -61,13 +65,21 @@ export const usePayrollItemData = () => {
       const newPayrollItem = await createPayrollItem(payrollItem);
       const updatedPayrollItems = await fetchPayrollItems();
       const employeeData = await fetchEmployees();
-      const payrollData = await fetchPayrolls();
+      const payrollData: PaginatedResponse<Payroll> = await fetchPayrolls();
+      console.log("Payroll data after add:", payrollData);
       const enrichedPayrollItems = updatedPayrollItems.map((item) => ({
         ...item,
-        employee: employeeData.find((emp) => emp.id === item.employee_id),
-        payroll: payrollData.find((p) => p.id === item.payroll_id),
+        employee: Array.isArray(employeeData)
+          ? employeeData.find((emp) => emp.id === item.employee_id)
+          : undefined,
+        payroll:
+          payrollData.data && item.payroll_id
+            ? payrollData.data.find((p: Payroll) => p.id === item.payroll_id)
+            : undefined,
       }));
       setPayrollItems(enrichedPayrollItems);
+      setEmployees(Array.isArray(employeeData) ? employeeData : []);
+      setPayrolls(payrollData.data || []);
       return newPayrollItem;
     } catch (err: any) {
       setError(err.message || "Failed to add payroll item.");
@@ -85,13 +97,20 @@ export const usePayrollItemData = () => {
       await updatePayrollItem(id, payrollItem);
       const updatedPayrollItems = await fetchPayrollItems();
       const employeeData = await fetchEmployees();
-      const payrollData = await fetchPayrolls();
+      const payrollData: PaginatedResponse<Payroll> = await fetchPayrolls();
       const enrichedPayrollItems = updatedPayrollItems.map((item) => ({
         ...item,
-        employee: employeeData.find((emp) => emp.id === item.employee_id),
-        payroll: payrollData.find((p) => p.id === item.payroll_id),
+        employee: Array.isArray(employeeData)
+          ? employeeData.find((emp) => emp.id === item.employee_id)
+          : undefined,
+        payroll:
+          payrollData.data && item.payroll_id
+            ? payrollData.data.find((p: Payroll) => p.id === item.payroll_id)
+            : undefined,
       }));
       setPayrollItems(enrichedPayrollItems);
+      setEmployees(Array.isArray(employeeData) ? employeeData : []);
+      setPayrolls(payrollData.data || []);
     } catch (err: any) {
       setError(err.message || "Failed to edit payroll item.");
       toast.error(err.message || "Failed to edit payroll item.");
@@ -104,13 +123,20 @@ export const usePayrollItemData = () => {
       await deletePayrollItem(id);
       const updatedPayrollItems = await fetchPayrollItems();
       const employeeData = await fetchEmployees();
-      const payrollData = await fetchPayrolls();
+      const payrollData: PaginatedResponse<Payroll> = await fetchPayrolls();
       const enrichedPayrollItems = updatedPayrollItems.map((item) => ({
         ...item,
-        employee: employeeData.find((emp) => emp.id === item.employee_id),
-        payroll: payrollData.find((p) => p.id === item.payroll_id),
+        employee: Array.isArray(employeeData)
+          ? employeeData.find((emp) => emp.id === item.employee_id)
+          : undefined,
+        payroll:
+          payrollData.data && item.payroll_id
+            ? payrollData.data.find((p: Payroll) => p.id === item.payroll_id)
+            : undefined,
       }));
       setPayrollItems(enrichedPayrollItems);
+      setEmployees(Array.isArray(employeeData) ? employeeData : []);
+      setPayrolls(payrollData.data || []);
     } catch (err: any) {
       setError(err.message || "Failed to remove payroll item.");
       toast.error(err.message || "Failed to remove payroll item.");
