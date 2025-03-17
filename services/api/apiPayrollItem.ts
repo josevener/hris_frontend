@@ -31,6 +31,10 @@ const apiFetch = async <T>(
   return response.json();
 };
 
+export const fetchPayrollItemsForActiveConfig = async () => {
+  return apiFetch<PayrollItem[]>("/payroll-items?active_config=true", "GET");
+};
+
 // Fetch all payroll items
 export const fetchPayrollItems = () =>
   apiFetch<PayrollItem[]>("/payroll-items", "GET");

@@ -4,33 +4,75 @@ import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Loader2 } from "lucide-react";
 import { apiFetch } from "@/services/api/apiPayrollCycle";
 import { toast } from "sonner";
 import { PayrollConfig } from "@/types/payroll";
+import { PayrollCycleCreate } from "./PayrollCycleCreate";
 
 export function PayrollCycleList() {
   const [configs, setConfigs] = useState<PayrollConfig[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
-    const fetchConfigs = async () => {
-      setIsLoading(true);
-      try {
-        const response = await apiFetch<PayrollConfig[]>("/payroll-config", "GET");
-        setConfigs(response);
-      } catch (err: any) {
-        toast.error(err.message || "Failed to load payroll cycles");
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchConfigs();
   }, []);
 
+  const fetchConfigs = async () => {
+    setIsLoading(true);
+    try {
+      const response = await apiFetch<PayrollConfig[]>("/payroll-config", "GET");
+      setConfigs(response);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to load payroll cycles");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreate = async (formData: any) => {
+    setIsCreating(true);
+    try {
+      await apiFetch("/payroll-config", "POST", {
+        ...formData,
+        first_start_day: parseInt(formData.first_start_day, 10),
+        first_end_day: parseInt(formData.first_end_day, 10),
+        second_start_day: parseInt(formData.second_start_day, 10),
+        second_end_day: parseInt(formData.second_end_day, 10),
+        pay_date_offset: parseInt(formData.pay_date_offset, 10),
+      });
+      toast.success("Payroll cycle created successfully!");
+      setIsModalOpen(false);
+      fetchConfigs();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create payroll cycle");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   return (
     <Card className="w-full max-w-5xl bg-white dark:bg-gray-800">
-      <CardHeader>
+      <CardHeader className="flex flex-row justify-between items-center">
         <CardTitle className="text-2xl font-bold dark:text-white">Payroll Cycle List</CardTitle>
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            <Button className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Payroll Cycle
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Payroll Cycle</DialogTitle>
+            </DialogHeader>
+            <PayrollCycleCreate onCreate={handleCreate} isCreating={isCreating} />
+          </DialogContent>
+        </Dialog>
       </CardHeader>
       <CardContent>
         <Table>
