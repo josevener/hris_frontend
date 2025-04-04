@@ -1,16 +1,15 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, UserRole } from "@/types/employee";
+import { User } from "@/types/employee";
 import UserActions from "./UserActions";
 import { ChevronUp, ChevronDown } from "lucide-react";
 
 interface UserTableProps {
   users: User[];
   loading: boolean;
-  handleEdit: (user: User) => void;
-  handleDelete: (user: User) => void;
+  handleEdit: (user: User) => void; // Still passed but not used in UserActions
+  handleDelete: (user: User) => void; // Still passed but not used in UserActions
   handleViewProfile: (user: User) => void;
-  userRole: UserRole;
   sortConfig: { key: keyof User; direction: "asc" | "desc" } | null;
   handleSort: (key: keyof User) => void;
 }
@@ -18,15 +17,21 @@ interface UserTableProps {
 const UserTable: React.FC<UserTableProps> = ({
   users,
   loading,
-  handleEdit,
-  handleDelete,
   handleViewProfile,
-  userRole,
   sortConfig,
   handleSort,
 }) => {
   const getFullName = (user: User): string => {
     return `${user.firstname} ${user.middlename ? user.middlename[0] + "." : ""} ${user.lastname} ${user.extension || ""}`.trim();
+  };
+
+  // Format date as "March 31, 2025"
+  const formatDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   const SortIcon = ({ column }: { column: keyof User }) =>
@@ -51,6 +56,9 @@ const UserTable: React.FC<UserTableProps> = ({
           <TableHead className="cursor-pointer dark:text-gray-200" onClick={() => handleSort("email")}>
             Email <SortIcon column="email" />
           </TableHead>
+          <TableHead className="cursor-pointer dark:text-gray-200" onClick={() => handleSort("phone_number")}>
+            Mobile No. <SortIcon column="phone_number" />
+          </TableHead>
           <TableHead className="cursor-pointer dark:text-gray-200" onClick={() => handleSort("role_name")}>
             Role <SortIcon column="role_name" />
           </TableHead>
@@ -68,6 +76,7 @@ const UserTable: React.FC<UserTableProps> = ({
               <TableCell><Skeleton className="h-4 w-32 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-32 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-16 dark:bg-gray-600" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-16 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
               <TableCell className="text-center"><Skeleton className="h-8 w-20 mx-auto dark:bg-gray-600" /></TableCell>
             </TableRow>
@@ -78,16 +87,16 @@ const UserTable: React.FC<UserTableProps> = ({
               <TableCell className="dark:text-gray-200">{index + 1}</TableCell>
               <TableCell className="dark:text-gray-200">{getFullName(user)}</TableCell>
               <TableCell className="dark:text-gray-200">{user.email}</TableCell>
+              <TableCell className="dark:text-gray-200">{user.phone_number ? user.phone_number : "N/A"}</TableCell>
               <TableCell className="dark:text-gray-200">{user.role_name}</TableCell>
-              <TableCell className="dark:text-gray-200">{new Date(user.created_at).toLocaleDateString()}</TableCell>
+              <TableCell className="dark:text-gray-200">{formatDate(user.created_at)}</TableCell>
               <TableCell className="text-center">
-                <UserActions
-                  user={user}
-                  userRole={userRole}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onViewProfile={handleViewProfile}
-                />
+                <div className="flex justify-center">
+                  <UserActions
+                    user={user}
+                    onView={handleViewProfile} // Only View button
+                  />
+                </div>
               </TableCell>
             </TableRow>
           ))

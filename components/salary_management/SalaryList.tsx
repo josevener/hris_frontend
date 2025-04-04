@@ -8,18 +8,19 @@ import { Toaster, toast } from "sonner";
 import { Plus } from "lucide-react";
 import SalaryForm from "./SalaryForm";
 import DeleteConfirmation from "./DeleteConfirmation";
+import SalaryTable from "./SalaryTable";
+import SalaryDetails from "./SalaryDetails"; // Import the new component
 import { Salary } from "@/types/salary";
 import { useSalaryData } from "@/hooks/useSalaryData";
-import SalaryTable from "./SalaryTable";
-import { UserRole } from "@/types/employee"; // Import UserRole type
+import { UserRole } from "@/types/employee";
 
-// Accept userRole as a prop, default to "Employee"
 const SalaryList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => {
   const { salaries, employees, loading, error, addSalary, editSalary, removeSalary } = useSalaryData();
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false); // New state for details dialog
   const [selectedSalary, setSelectedSalary] = useState<Salary | null>(null);
   const [newSalary, setNewSalary] = useState<Partial<Salary>>({
     employee_id: 0,
@@ -46,6 +47,10 @@ const SalaryList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =
     }
     if (!salary.start_date) {
       toast.error("Start date is required.");
+      return false;
+    }
+    if (isEditModalOpen && (!salary.end_date || salary.end_date.trim() === "")) {
+      toast.error("End date is required when editing.");
       return false;
     }
     return true;
@@ -104,9 +109,10 @@ const SalaryList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =
       setIsDeleting(false);
     }
   };
-  const handleViewProfile = (salary: Salary) => {
-      console.log(`View Profile: ${salary.employee?.id}`);
-      toast.info("View profile functionality to be implemented");
+
+  const handleViewSalary = (salary: Salary) => {
+    setSelectedSalary(salary);
+    setIsDetailsModalOpen(true);
   };
 
   const filteredSalaries = useMemo(() => {
@@ -139,7 +145,7 @@ const SalaryList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          {(userRole === "HR" || userRole === "Admin") && ( // Only show "Add Salary" for HR/Admin
+          {(userRole === "HR" || userRole === "Admin") && (
             <Button onClick={() => setIsAddModalOpen(true)}>
               <Plus className="mr-2 h-4 w-4" /> Add Salary
             </Button>
@@ -160,7 +166,7 @@ const SalaryList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =
           setSelectedSalary(salary);
           setIsDeleteModalOpen(true);
         }}
-        handleViewProfile={handleViewProfile}
+        handleViewSalary={handleViewSalary}
         userRole={userRole}
       />
 
@@ -195,6 +201,25 @@ const SalaryList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =
           onCancel={() => setIsDeleteModalOpen(false)}
           isDeleting={isDeleting}
         />
+      </Dialog>
+
+      <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+        {selectedSalary && (
+          <SalaryDetails
+            isOpen={isDetailsModalOpen}
+            onOpenChange={setIsDetailsModalOpen}
+            salary={selectedSalary}
+            userRole={userRole}
+            onEdit={(salary) => {
+              setSelectedSalary(salary);
+              setIsEditModalOpen(true);
+            }}
+            onDelete={(salary) => {
+              setSelectedSalary(salary);
+              setIsDeleteModalOpen(true);
+            }}
+          />
+        )}
       </Dialog>
     </div>
   );

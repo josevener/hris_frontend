@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import {
   BadgeCheck,
   Bell,
@@ -8,6 +7,8 @@ import {
   CreditCard,
   LogOut,
   Sparkles,
+  User,
+  Briefcase,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,83 +28,36 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Interface for user profile
-interface UserProfile {
-  profile_image?: string;
-  firstname?: string;
-  lastname?: string;
-  email?: string;
-}
+import { useAuth } from "@/lib/AuthContext";
 
 export function NavUser() {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { isMobile } = useSidebar();
   const router = useRouter();
+  const { user, logout, loading } = useAuth();
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const response = await fetch("http://127.0.0.1:8000/api/user/profile", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          credentials: "include", // For session-based auth
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch user profile: ${response.status}`);
-        }
-
-        const data: UserProfile = await response.json();
-        setUserProfile(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-        console.error("Error fetching user profile:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, []);
+  // Redirect to login if no user is authenticated
+  if (!loading && !user) {
+    router.push("/login");
+    return null; // Render nothing while redirecting
+  }
 
   const getInitials = (): string => {
-    if (!userProfile) return "U";
-    const firstInitial = userProfile.firstname?.charAt(0) || "";
-    const lastInitial = userProfile.lastname?.charAt(0) || "";
+    if (!user) return "U";
+    const firstInitial = user.firstname?.charAt(0) || "";
+    const lastInitial = user.lastname?.charAt(0) || "";
     return `${firstInitial}${lastInitial}`.toUpperCase();
   };
 
   const getFullName = (): string => {
-    if (!userProfile) return "User";
-    return `${userProfile.firstname || ""} ${userProfile.lastname || ""}`.trim();
+    if (!user) return "User";
+    const middle = user.middlename ? ` ${user.middlename}` : "";
+    const ext = user.extension ? ` ${user.extension}` : "";
+    return `${user.firstname || ""}${middle} ${user.lastname || ""}${ext}`.trim();
   };
 
   const handleLogout = async () => {
-    try {
-      const response = await fetch("http://127.0.0.1:8000/api/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error("Logout failed");
-      }
-
-      setUserProfile(null);
-      router.push("/login");
-    } catch (err) {
-      console.error("Error during logout:", err);
-    }
+    await logout(); // Use context logout
+    router.push("/login");
   };
 
   const handleProfile = () => {
@@ -121,24 +75,6 @@ export function NavUser() {
   const handleUpgrade = () => {
     router.push("/upgrade");
   };
-
-  if (error) {
-    return (
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton size="lg">
-            <Avatar className="h-8 w-8 rounded-lg">
-              <AvatarFallback className="rounded-lg">U</AvatarFallback>
-            </Avatar>
-            <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold">User</span>
-              <span className="truncate text-xs">Error loading profile</span>
-            </div>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      </SidebarMenu>
-    );
-  }
 
   return (
     <SidebarMenu>
@@ -161,7 +97,7 @@ export function NavUser() {
                 <>
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarImage
-                      src={userProfile?.profile_image || ""}
+                      src={user?.profile_image || ""}
                       alt={getFullName()}
                     />
                     <AvatarFallback className="rounded-lg">
@@ -170,7 +106,7 @@ export function NavUser() {
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">{getFullName()}</span>
-                    <span className="truncate text-xs">{userProfile?.email || "N/A"}</span>
+                    <span className="truncate text-xs">{user?.email || "N/A"}</span>
                   </div>
                 </>
               )}
@@ -184,7 +120,7 @@ export function NavUser() {
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+              <div className="flex flex-col gap-2 px-1 py-1.5 text-left text-sm">
                 {loading ? (
                   <>
                     <Skeleton className="h-8 w-8 rounded-lg" />
@@ -195,18 +131,30 @@ export function NavUser() {
                   </>
                 ) : (
                   <>
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage
-                        src={userProfile?.profile_image || ""}
-                        alt={getFullName()}
-                      />
-                      <AvatarFallback className="rounded-lg">
-                        {getInitials()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">{getFullName()}</span>
-                      <span className="truncate text-xs">{userProfile?.email || "N/A"}</span>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-8 w-8 rounded-lg">
+                        <AvatarImage
+                          src={user?.profile_image || ""}
+                          alt={getFullName()}
+                        />
+                        <AvatarFallback className="rounded-lg">
+                          {getInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-semibold">{getFullName()}</span>
+                        <span className="truncate text-xs">{user?.email || "N/A"}</span>
+                      </div>
+                    </div>
+                    <div className="grid text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        Role: {user?.role_name || "N/A"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Briefcase className="h-3 w-3" />
+                        ID: {user?.company_id_number || "N/A"}
+                      </span>
                     </div>
                   </>
                 )}

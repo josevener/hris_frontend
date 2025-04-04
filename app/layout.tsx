@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@/css/globals.css";
+import AuthProviderWrapper from "@/components/AuthProviderWrapper";
 
 export const metadata: Metadata = {
   title: "BFD Corp.",
@@ -13,7 +14,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body>{children}</body>
+      <body>
+        <AuthProviderWrapper>
+          {children}
+        </AuthProviderWrapper>
+      </body>
     </html>
   );
 }

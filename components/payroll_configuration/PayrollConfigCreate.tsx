@@ -4,7 +4,16 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { useState } from "react";
 
-export function PayrollCycleCreate({ onCreate, isCreating }: { onCreate: (data: any) => void, isCreating: boolean }) {
+interface PayrollConfigData {
+  start_year_month: string;
+  first_start_day: string;
+  first_end_day: string;
+  second_start_day: string;
+  second_end_day: string;
+  pay_date_offset: string;
+}
+
+export function PayrollConfigCreate({ onCreate, isCreating }: { onCreate: (data: PayrollConfigData) => void, isCreating: boolean }) {
   const [formData, setFormData] = useState({
     start_year_month: "",
     first_start_day: "",

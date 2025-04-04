@@ -18,6 +18,7 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false); // New state for view modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedPayrollItem, setSelectedPayrollItem] = useState<PayrollItem | null>(null);
   const [newPayrollItem, setNewPayrollItem] = useState<Partial<PayrollItem>>({
@@ -125,8 +126,8 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
   };
 
   const handleViewProfile = (payrollItem: PayrollItem) => {
-    console.log(`View Profile: ${payrollItem.employee?.id}`);
-    toast.info("View profile functionality to be implemented");
+    setSelectedPayrollItem(payrollItem);
+    setIsViewModalOpen(true);
   };
 
   const filteredPayrollItems = useMemo(() => {
@@ -209,6 +210,21 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
             onCancel={() => setIsEditModalOpen(false)}
             isSaving={isSaving}
             isEditMode
+          />
+        )}
+      </Dialog>
+
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        {selectedPayrollItem && (
+          <PayrollItemForm
+            payrollItem={selectedPayrollItem}
+            employees={employees}
+            payrolls={payrolls}
+            onChange={() => {}} // No-op for view mode
+            onSave={() => {}} // No-op for view mode
+            onCancel={() => setIsViewModalOpen(false)}
+            isSaving={false}
+            isViewMode
           />
         )}
       </Dialog>

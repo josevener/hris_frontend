@@ -18,9 +18,7 @@ export interface Payroll {
   id: number;
   employee_id: number;
   salary_id: number;
-  pay_date: string;
-  start_date?: string;
-  end_date?: string;
+  payroll_cycles_id: number;
   status: "pending" | "processed" | "paid";
   total_earnings?: number;
   total_deductions?: number;
@@ -30,6 +28,7 @@ export interface Payroll {
   employee?: Employee;
   salary?: Salary;
   payroll_items?: PayrollItem[];
+  payroll_cycle?: PayrollCycle;
 }
 
 export interface PayrollItem {

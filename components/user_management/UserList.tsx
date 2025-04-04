@@ -20,9 +20,10 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: "asc" | "desc" } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User & { confirmPassword?: string } | null>(null);
+  const [isEditable, setIsEditable] = useState(false);
   const [newUser, setNewUser] = useState<Partial<User & { confirmPassword?: string }>>({
     lastname: "",
     firstname: "",
@@ -39,7 +40,6 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     fetchUsers(page);
@@ -82,8 +82,9 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
       const payload = { ...selectedUser };
       delete payload.confirmPassword;
       await editUser(selectedUser.id, payload);
-      setIsEditModalOpen(false);
+      setIsViewModalOpen(false);
       setSelectedUser(null);
+      setIsEditable(false);
       toast.success("User updated successfully");
       if (userRole === "Employee") toast.info("Your profile has been updated");
     } catch (err) {
@@ -111,8 +112,9 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
   };
 
   const handleViewProfile = (user: User) => {
-    console.log(`View Profile: ${user.id}`);
-    toast.info("View profile functionality to be implemented");
+    setSelectedUser(user);
+    setIsViewModalOpen(true);
+    setIsEditable(false); // Ensure non-editable on open
   };
 
   const handleSort = (key: SortKey) => {
@@ -123,8 +125,7 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
   };
 
   const filteredAndSortedUsers = useMemo(() => {
-    let result = [...users]; // `users` is the `data` array from Laravel
-
+    let result = [...users];
     if (searchTerm) {
       result = result.filter((user) =>
         [
@@ -147,23 +148,18 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
       result.sort((a, b) => {
         const aValue = a[sortConfig.key];
         const bValue = b[sortConfig.key];
-
         if (aValue === undefined || bValue === undefined) return 0;
-
         if (typeof aValue === "string" && typeof bValue === "string") {
           return sortConfig.direction === "asc"
             ? aValue.localeCompare(bValue)
             : bValue.localeCompare(aValue);
         }
-
         if (typeof aValue === "number" && typeof bValue === "number") {
           return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
         }
-
         return 0;
       });
     }
-
     return result;
   }, [users, searchTerm, sortConfig]);
 
@@ -194,16 +190,12 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
       <UserTable
         users={filteredAndSortedUsers}
         loading={loading}
-        handleEdit={(user) => {
-          setSelectedUser(user);
-          setIsEditModalOpen(true);
-        }}
+        handleEdit={() => {}} // Placeholder, not used
         handleDelete={(user) => {
           setSelectedUser(user);
           setIsDeleteModalOpen(true);
         }}
         handleViewProfile={handleViewProfile}
-        userRole={userRole}
         sortConfig={sortConfig}
         handleSort={handleSort}
       />
@@ -238,17 +230,28 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
         />
       </Dialog>
 
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      <Dialog
+        open={isViewModalOpen}
+        onOpenChange={(open) => {
+          setIsViewModalOpen(open);
+          if (!open) {
+            setIsEditable(false);
+            setSelectedUser(null);
+          }
+        }}
+      >
         {selectedUser && (
           <UserForm
             user={selectedUser}
             onChange={(updatedUser) => setSelectedUser(updatedUser as User & { confirmPassword?: string })}
             onSave={handleUpdateUser}
-            onCancel={() => setIsEditModalOpen(false)}
+            onCancel={() => setIsViewModalOpen(false)}
             isSaving={isSaving}
             isEditMode
             userRole={userRole}
             originalEmail={selectedUser.email}
+            isEditable={isEditable}
+            setIsEditable={setIsEditable}
           />
         )}
       </Dialog>

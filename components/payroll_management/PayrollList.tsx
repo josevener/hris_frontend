@@ -1,117 +1,132 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { usePayrollData } from "@/hooks/usePayrollData";
-import { Payroll, SortKey } from "@/types/payroll";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import PayrollForm from "@/components/payroll_management/PayrollForm";
-import PayrollTable from "@/components/payroll_management/PayrollTable";
-import DeleteConfirmation from "@/components/payroll_management/PayrollDeleteConfirmation";
-import { toast } from "sonner";
-import { Loader2, Plus } from "lucide-react";
-import { Employee, UserRole } from "@/types/employee";
-import PayrollDetails from "./PayrollDetails";
+import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
+import { Toaster, toast } from "sonner";
+import { Plus } from "lucide-react";
+import PayrollForm from "./PayrollForm";
+import { Payroll, SortKey } from "@/types/payroll";
+import { usePayrollData } from "@/hooks/usePayrollData";
+import { PayrollTable } from "./PayrollTable";
+import { useAuth } from "@/lib/AuthContext";
+import { UserRole } from "@/types/employee";
+import { createPayroll, updatePayroll } from "@/services/api/apiPayroll";
 
 const PayrollList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => {
-  const {
-    payrolls,
-    employees,
-    salaries,
-    payrollItems,
-    loading,
-    error,
-    currentPage,
-    lastPage,
-    perPage,
-    fetchPayrolls,
-    addPayroll,
-    editPayroll,
-    removePayroll,
-  } = usePayrollData();
-
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false); // New state for view dialog
-  const [selectedPayroll, setSelectedPayroll] = useState<Partial<Payroll> | null>(null);
-  const [payrollToDelete, setPayrollToDelete] = useState<Payroll | null>(null);
-  const [payrollToView, setPayrollToView] = useState<Payroll | null>(null); // New state for viewing payroll
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { payrolls, employees, salaries, payrollItems, payrollCycles, loading: dataLoading, error, setPayrolls } = usePayrollData();
+  const { token } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("All");
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: "asc" | "desc" } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null);
+  const [isEditable, setIsEditable] = useState(false);
+  const [newPayroll, setNewPayroll] = useState<Partial<Payroll>>({
+    employee_id: 0,
+    payroll_cycles_id: 0,
+    status: "pending",
+  });
+  const [isAdding, setIsAdding] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const itemsPerPage = 10;
 
-  const handleAddPayroll = () => {
-    setSelectedPayroll({ status: "pending" });
-    setIsAddDialogOpen(true);
+  const isLoading = dataLoading || isAdding || isUpdating;
+
+  const validatePayroll = (payroll: Partial<Payroll>): boolean => {
+    if (!payroll.employee_id || payroll.employee_id === 0) {
+      toast.error("Employee is required.");
+      return false;
+    }
+    if (!payroll.payroll_cycles_id || payroll.payroll_cycles_id === 0) {
+      toast.error("Payroll cycle is required.");
+      return false;
+    }
+    if (!payroll.status) {
+      toast.error("Status is required.");
+      return false;
+    }
+    return true;
   };
 
-  const handleEditPayroll = (payroll: Payroll) => {
-    setSelectedPayroll(payroll);
-    setIsAddDialogOpen(true);
-  };
-
-  const handleDeletePayroll = (payroll: Payroll) => {
-    setPayrollToDelete(payroll);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!payrollToDelete) return;
-
-    setIsDeleting(true);
+  const handleAddPayroll = async () => {
+    setIsAdding(true);
     try {
-      await removePayroll(payrollToDelete.id!);
-      toast.success("Payroll deleted successfully");
-      fetchPayrolls(currentPage);
+      if (!validatePayroll(newPayroll)) return;
+
+      const salary = salaries.find((s) => s.employee_id === newPayroll.employee_id);
+      const payload: Partial<Payroll> = {
+        ...newPayroll,
+        salary_id: salary?.id || 0,
+      };
+      const addedPayroll = await createPayroll(payload);
+
+      const enrichedPayroll = {
+        ...addedPayroll,
+        employee: employees.find((e) => e.id === addedPayroll.employee_id),
+        payroll_cycle: payrollCycles.find((c) => c.id === addedPayroll.payroll_cycles_id),
+        salary: salaries.find((s) => s.id === addedPayroll.salary_id),
+        payroll_items: addedPayroll.payroll_items || [],
+      };
+
+      setPayrolls((prev) => [...prev, enrichedPayroll]);
+      setIsAddModalOpen(false);
+      setNewPayroll({ employee_id: 0, payroll_cycles_id: 0, status: "pending" });
+      toast.success("Payroll added successfully");
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete payroll");
+      toast.error(err.message || "Failed to add payroll");
     } finally {
-      setIsDeleting(false);
-      setIsDeleteDialogOpen(false);
-      setPayrollToDelete(null);
+      setIsAdding(false);
+    }
+  };
+
+  const handleUpdatePayroll = async () => {
+    if (!selectedPayroll) return;
+
+    setIsUpdating(true);
+    try {
+      if (!validatePayroll(selectedPayroll)) return;
+
+      const payload: Partial<Payroll> = {
+        employee_id: selectedPayroll.employee_id,
+        payroll_cycles_id: selectedPayroll.payroll_cycles_id,
+        status: selectedPayroll.status,
+        salary_id: selectedPayroll.salary_id,
+      };
+      const updatedPayroll = await updatePayroll(selectedPayroll.id, payload);
+      console.log("Updated payrolls:", updatedPayroll);
+      // Merge updatedPayroll with existing enriched data to preserve fields not returned by API
+      const enrichedPayroll = {
+        ...selectedPayroll, // Preserve existing enriched fields
+        ...updatedPayroll,  // Overwrite with updated fields
+        employee: employees.find((e) => e.id === updatedPayroll.employee_id) || selectedPayroll.employee,
+        payroll_cycle: payrollCycles.find((c) => c.id === updatedPayroll.payroll_cycles_id) || selectedPayroll.payroll_cycle,
+        salary: salaries.find((s) => s.id === updatedPayroll.salary_id) || selectedPayroll.salary,
+        payroll_items: updatedPayroll.payroll_items !== undefined ? updatedPayroll.payroll_items : selectedPayroll.payroll_items || [],
+      };
+        
+      setPayrolls((prev) => {
+        const newPayrolls = prev.map((p) => (p.id === updatedPayroll.id ? enrichedPayroll : p));
+        return [...newPayrolls]; // Ensure a new array reference
+      });
+
+      setIsViewModalOpen(false);
+      setSelectedPayroll(null);
+      setIsEditable(false);
+      toast.success("Payroll updated successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update payroll");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const handleViewPayroll = (payroll: Payroll) => {
-    toast.info(`Viewing payroll for employee ID ${payroll.employee_id}`);
-    console.log("View payroll:", payroll);
-    setPayrollToView(payroll);
-    setIsViewDialogOpen(true);
-  };
-
-  const handleSavePayroll = async () => {
-    if (!selectedPayroll) return;
-
-    setIsSaving(true);
-    try {
-      if (selectedPayroll.id) {
-        await editPayroll(selectedPayroll.id, selectedPayroll);
-        toast.success("Payroll updated successfully");
-      } else {
-        await addPayroll(selectedPayroll);
-        toast.success("Payroll added successfully");
-      }
-      setIsAddDialogOpen(false);
-      fetchPayrolls(currentPage);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save payroll");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleFormChange = (updatedPayroll: Partial<Payroll>) => {
-    setSelectedPayroll(updatedPayroll);
+    setSelectedPayroll(payroll);
+    setIsViewModalOpen(true);
+    setIsEditable(false);
   };
 
   const handleSort = (key: SortKey) => {
@@ -121,183 +136,165 @@ const PayrollList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) 
     }));
   };
 
-  const handlePageChange = (page: number) => {
-    fetchPayrolls(page);
+  const handlePayrollChange = (updatedPayroll: Partial<Payroll>) => {
+    setSelectedPayroll((prev) => (prev ? { ...prev, ...updatedPayroll } : null));
   };
 
-  const filteredPayrolls = useMemo(() => {
+  const filteredAndSortedPayrolls = useMemo(() => {
     let result = [...payrolls];
-
     if (searchTerm) {
-      result = result.filter((payroll) => {
-        const employee: Employee | undefined = employees.find((emp) => emp.id === payroll.employee_id);
-        const fullName = employee?.user
-          ? `${employee.user.firstname} ${employee.user.middlename ? employee.user.middlename[0] + "." : ""} ${employee.user.lastname}`.trim()
-          : "";
-        return (
-          fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          payroll.status.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      });
+      result = result.filter((p) =>
+        [
+          p.employee?.user?.lastname,
+          p.employee?.user?.firstname,
+          p.status,
+          p.net_salary?.toString(),
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase())
+      );
     }
-
-    if (statusFilter !== "All") {
-      result = result.filter((payroll) => payroll.status === statusFilter);
-    }
-
     if (sortConfig) {
       result.sort((a, b) => {
         let aValue: string | number | undefined;
         let bValue: string | number | undefined;
 
-        if (sortConfig.key === "employee.user.lastname") {
-          const aEmployee = employees.find((emp) => emp.id === a.employee_id);
-          const bEmployee = employees.find((emp) => emp.id === b.employee_id);
-          aValue = aEmployee?.user?.lastname || "";
-          bValue = bEmployee?.user?.lastname || "";
-        } else {
-          aValue = a[sortConfig.key];
-          bValue = b[sortConfig.key];
+        switch (sortConfig.key) {
+          case "employee.user.lastname":
+            aValue = a.employee?.user?.lastname ?? "";
+            bValue = b.employee?.user?.lastname ?? "";
+            break;
+          case "status":
+            aValue = a.status;
+            bValue = b.status;
+            break;
+          case "id":
+            aValue = a.id;
+            bValue = b.id;
+            break;
+          case "pay_date":
+            aValue = a.payroll_cycle?.pay_date ?? "";
+            bValue = b.payroll_cycle?.pay_date ?? "";
+            break;
+          default:
+            aValue = "";
+            bValue = "";
         }
-
-        if (aValue === undefined || bValue === undefined) return 0;
 
         if (typeof aValue === "string" && typeof bValue === "string") {
           return sortConfig.direction === "asc" ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
         }
-
-        if (typeof aValue === "number" && typeof bValue === "number") {
-          return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
-        }
-
-        return 0;
+        const aNum = typeof aValue === "number" ? aValue : 0;
+        const bNum = typeof bValue === "number" ? bValue : 0;
+        return sortConfig.direction === "asc" ? aNum - bNum : bNum - aNum;
       });
     }
-
     return result;
-  }, [payrolls, employees, searchTerm, statusFilter, sortConfig]);
+  }, [payrolls, searchTerm, sortConfig]);
+
+  const paginatedPayrolls = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedPayrolls.slice(start, start + itemsPerPage);
+  }, [filteredAndSortedPayrolls, currentPage]);
+
+  const totalPages = Math.ceil(filteredAndSortedPayrolls.length / itemsPerPage);
 
   return (
-    <div className="p-6 flex flex-col items-center bg-background text-foreground dark:bg-gray-900 dark:text-gray-100">
+    <div className="p-6 flex flex-col items-center bg-background text-foreground dark:bg-gray-900 dark:text-foreground">
+      <Toaster position="top-right" richColors />
       <div className="w-full max-w-6xl mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold dark:text-white">Payroll List</h1>
+        <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Payroll Management</h1>
         <div className="flex gap-4">
           <Input
             placeholder="Search payrolls..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm bg-white dark:bg-gray-800 dark:text-white dark:border-gray-700"
+            className="max-w-sm bg-white dark:bg-gray-800 dark:text-foreground dark:border-gray-700"
           />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800 dark:text-white dark:border-gray-700">
-              <SelectValue placeholder="Filter by Status" />
-            </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-gray-800 dark:text-white dark:border-gray-700">
-              <SelectItem value="All">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="processed">Processed</SelectItem>
-              <SelectItem value="paid">Paid</SelectItem>
-            </SelectContent>
-          </Select>
           {(userRole === "HR" || userRole === "Admin") && (
-            <Button onClick={handleAddPayroll} className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">
+            <Button onClick={() => setIsAddModalOpen(true)} className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-foreground">
               <Plus className="mr-2 h-4 w-4" /> Add Payroll
             </Button>
           )}
         </div>
       </div>
 
-      {loading && (
-        <div className="flex justify-center">
-          <Loader2 className="h-6 w-6 animate-spin dark:text-white" />
-        </div>
-      )}
-      {error && <p className="text-red-500 mb-4 dark:text-red-400">{error}</p>}
-      {!loading && !error && (
-        <PayrollTable
-          payrolls={filteredPayrolls}
-          payrollItems={payrollItems}
-          loading={loading}
-          handleEdit={handleEditPayroll}
-          handleDelete={handleDeletePayroll}
-          handleViewPayroll={handleViewPayroll}
-          userRole={userRole}
-          sortConfig={sortConfig}
-          handleSort={handleSort}
-          itemsPerPage={perPage}
-        />
-      )}
+      {error && <div className="text-red-500 mb-4 dark:text-red-400">{error}</div>}
 
-      {lastPage > 1 && (
-        <div className="mt-4 flex items-center gap-2 text-foreground dark:text-gray-200">
+      <PayrollTable
+        payrolls={paginatedPayrolls}
+        loading={isLoading}
+        sortConfig={sortConfig}
+        handleSort={handleSort}
+        handleViewPayroll={handleViewPayroll}
+        itemsPerPage={itemsPerPage}
+      />
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center gap-2 text-foreground dark:text-foreground">
           <Button
             variant="outline"
-            onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
-            className="dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
+            className="dark:bg-gray-700 dark:text-foreground dark:border-gray-600 dark:hover:bg-gray-600"
           >
             Previous
           </Button>
-          <span>Page {currentPage} of {lastPage}</span>
+          <span>Page {currentPage} of {totalPages}</span>
           <Button
             variant="outline"
-            onClick={() => handlePageChange(Math.min(currentPage + 1, lastPage))}
-            disabled={currentPage === lastPage}
-            className="dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="dark:bg-gray-700 dark:text-foreground dark:border-gray-600 dark:hover:bg-gray-600"
           >
             Next
           </Button>
         </div>
       )}
 
-      {/* Add/Edit Payroll Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>{selectedPayroll?.id ? "Edit Payroll" : "Add Payroll"}</DialogTitle>
-            <DialogDescription>
-              {selectedPayroll?.id
-                ? "Modify the payroll details below."
-                : "Fill in the details to add a new payroll."}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedPayroll && (
-            <PayrollForm
-              payroll={selectedPayroll}
-              employees={employees}
-              salaries={salaries}
-              payrollItems={payrollItems}
-              onChange={handleFormChange}
-              onSave={handleSavePayroll}
-              onCancel={() => setIsAddDialogOpen(false)}
-              isSaving={isSaving}
-              isEditMode={!!selectedPayroll.id}
-            />
-          )}
-        </DialogContent>
+      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+        <PayrollForm
+          payroll={newPayroll}
+          employees={employees}
+          salaries={salaries}
+          payrollItems={payrollItems}
+          payrollCycles={payrollCycles}
+          onChange={setNewPayroll}
+          onSave={handleAddPayroll}
+          onCancel={() => setIsAddModalOpen(false)}
+          isSaving={isAdding}
+          userRole={userRole}
+        />
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        {payrollToDelete && (
-          <DeleteConfirmation
-            onConfirm={confirmDelete}
-            onCancel={() => setIsDeleteDialogOpen(false)}
-            isDeleting={isDeleting}
+      <Dialog
+        open={isViewModalOpen}
+        onOpenChange={(open) => {
+          setIsViewModalOpen(open);
+          if (!open) {
+            setIsEditable(false);
+            setSelectedPayroll(null);
+          }
+        }}
+      >
+        {selectedPayroll && (
+          <PayrollForm
+            payroll={selectedPayroll}
+            employees={employees}
+            salaries={salaries}
+            payrollItems={payrollItems}
+            payrollCycles={payrollCycles}
+            onChange={handlePayrollChange}
+            onSave={handleUpdatePayroll}
+            onCancel={() => setIsViewModalOpen(false)}
+            isSaving={isUpdating}
+            userRole={userRole}
+            isEditMode
+            isEditable={isEditable}
+            setIsEditable={setIsEditable}
           />
         )}
-      </Dialog>
-
-      {/* View Payroll Details Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <PayrollDetails 
-          isOpen={isViewDialogOpen}
-          onOpenChange={setIsViewDialogOpen}
-          payroll={payrollToView}
-          userRole={userRole}
-          onDelete={handleDeletePayroll}
-          onEdit={handleEditPayroll}
-        />
       </Dialog>
     </div>
   );

@@ -1,9 +1,9 @@
+import { getCookie } from "@/lib/auth";
 import { Payroll, PayrollItem } from "@/types/payroll";
 
 const BASE_URL = "http://127.0.0.1:8000/api";
 
-const getAuthToken = () =>
-  localStorage.getItem("auth_token") || "your-sanctum-token-here";
+const getAuthToken = () => getCookie("auth_token");
 
 const apiFetch = async <T>(
   endpoint: string,
@@ -51,7 +51,18 @@ export const fetchPayrollItemsByPayrollId = (payrollId?: number) =>
   );
 
 export const createPayroll = (data: Partial<Payroll>) =>
-  apiFetch<Payroll>("/payroll", "POST", data);
+  // apiFetch<Payroll>("/payroll", "POST", data);
+  apiFetch<{ message: string; payroll: Payroll }>(
+    "/payroll",
+    "POST",
+    data
+  ).then((response) => {
+    const payroll = response.payroll;
+    if (!payroll.id) {
+      console.warn("Backend returned a payroll without an ID:", payroll);
+    }
+    return response.payroll;
+  });
 
 export const updatePayroll = (id: number, data: Partial<Payroll>) =>
   apiFetch<Payroll>(`/payroll/${id}`, "PUT", data);

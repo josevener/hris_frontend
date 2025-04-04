@@ -1,9 +1,11 @@
+import { getCookie } from "@/lib/auth";
 import { PayrollItem } from "@/types/payroll";
 
 const BASE_URL = "http://127.0.0.1:8000/api";
 
-const getAuthToken = () =>
-  localStorage.getItem("auth_token") || "your-sanctum-token-here";
+const getAuthToken = () => {
+  const token = getCookie("auth_token");
+};
 
 const apiFetch = async <T>(
   endpoint: string,

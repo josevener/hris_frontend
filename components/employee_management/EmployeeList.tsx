@@ -13,17 +13,20 @@ import { Employee, SortKey, UserRole } from "@/types/employee";
 import { useEmployeeData } from "@/hooks/useEmployeeData";
 import { createEmployee, deleteEmployee, fetchEmployees, updateEmployee } from "@/services/api/apiEmployee";
 import { EmployeeTable } from "./EmployeeTable";
+import { useAuth } from "@/lib/AuthContext";
 
 const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => {
-  const { employees, users, departments, designations, loading, error, setEmployees, setUsers } = useEmployeeData();
+  const { employees, users, departments, designations, loading: dataLoading, error, setEmployees, setUsers } = useEmployeeData();
+  const { token } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [roleFilter, setRoleFilter] = useState<string>("All");
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: "asc" | "desc" } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false); // Renamed from isEditModalOpen
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isEditable, setIsEditable] = useState(false);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
     birthdate: null,
     reports_to: null,
@@ -37,6 +40,8 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const itemsPerPage = 10;
+
+  const isLoading = dataLoading || isAdding || isUpdating || isDeleting;
 
   const validateEmployee = (employee: Partial<Employee>): boolean => {
     if (!employee.user_id || employee.user_id === 0) {
@@ -61,7 +66,14 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
 
       const companyIdNumber = users.find((u) => u.id === newEmployee.user_id)?.company_id_number || "";
       const payload = { ...newEmployee, company_id_number: companyIdNumber };
-      const addedEmployee = await createEmployee(payload);
+      console.log("Payload sent to createEmployee:", payload);
+
+      const addedEmployee = await createEmployee(payload, token);
+      console.log("addedEmployee received:", addedEmployee);
+
+      if (!addedEmployee.id) {
+        throw new Error("Employee ID missing from server response");
+      }
 
       const enrichedEmployee: Employee = {
         ...addedEmployee,
@@ -73,7 +85,11 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
         created_at: addedEmployee.created_at || new Date().toISOString(),
       };
 
-      setEmployees((prev) => [...prev, enrichedEmployee]);
+      setEmployees((prev) => {
+        const newEmployees = [...prev, enrichedEmployee];
+        console.log("Updated employees:", newEmployees);
+        return newEmployees;
+      });
       setUsers((prev) => prev.filter((u) => u.id !== newEmployee.user_id));
       setIsAddModalOpen(false);
       setNewEmployee({
@@ -87,9 +103,12 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       });
       toast.success("Employee added successfully");
       if (userRole === "Employee") toast.info("Your profile has been submitted for review");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      toast.error(err.message || "Failed to add employee");
+      const errorMessage =
+        err.response?.data?.errors?.company_id_number?.[0] ||
+        err.response?.data?.message ||
+        err.message || "Failed to add employee";
+      toast.error(errorMessage);
       console.error("Add error:", err);
     } finally {
       setIsAdding(false);
@@ -113,18 +132,16 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
         designation_id: selectedEmployee.designation_id,
       };
 
-      await updateEmployee(selectedEmployee.id, payload);
+      await updateEmployee(selectedEmployee.id, payload, token);
 
-      const employees = await fetchEmployees();
-      
+      const employees = await fetchEmployees(token);
       setEmployees(employees);
 
-      setIsEditModalOpen(false);
+      setIsViewModalOpen(false);
       setSelectedEmployee(null);
+      setIsEditable(false);
       toast.success("Employee updated successfully");
       if (userRole === "Employee") toast.info("Your profile has been updated");
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to update employee");
       console.error("Update error:", err);
@@ -138,14 +155,12 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
 
     setIsDeleting(true);
     try {
-      await deleteEmployee(selectedEmployee.id);
+      await deleteEmployee(selectedEmployee.id, token);
       setEmployees((prev) => prev.filter((emp) => emp.id !== selectedEmployee.id));
       if (selectedEmployee.user) setUsers((prev) => [...prev, selectedEmployee.user!]);
       setIsDeleteModalOpen(false);
       setSelectedEmployee(null);
       toast.success("Employee deleted successfully");
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to delete employee");
       console.error("Delete error:", err);
@@ -155,8 +170,9 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
   };
 
   const handleViewProfile = (employee: Employee) => {
-    console.log(`View Profile: ${employee.id}`);
-    toast.info("View profile functionality to be implemented");
+    setSelectedEmployee(employee);
+    setIsViewModalOpen(true);
+    setIsEditable(false); // Start in view-only mode
   };
 
   const handleSort = (key: SortKey) => {
@@ -188,8 +204,8 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       );
     }
 
-    if (statusFilter !== "All") {
-      result = result.filter((emp) => emp.status === statusFilter);
+    if (roleFilter !== "All") {
+      result = result.filter((emp) => emp.user?.role_name === roleFilter);
     }
 
     if (sortConfig) {
@@ -212,7 +228,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
     }
 
     return result;
-  }, [employees, searchTerm, statusFilter, sortConfig]);
+  }, [employees, searchTerm, roleFilter, sortConfig]);
 
   const paginatedEmployees = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -222,31 +238,30 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
   const totalPages = Math.ceil(filteredAndSortedEmployees.length / itemsPerPage);
 
   return (
-    <div className="p-6 flex flex-col items-center bg-background text-foreground dark:bg-gray-900 dark:text-gray-100">
+    <div className="p-6 flex flex-col items-center bg-background text-foreground dark:bg-gray-900 dark:text-foreground">
       <Toaster position="top-right" richColors />
       <div className="w-full max-w-6xl mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold dark:text-white">Employee Management</h1>
+        <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Employee Management</h1>
         <div className="flex gap-4">
           <Input
             placeholder="Search employees..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-sm bg-white dark:bg-gray-800 dark:text-white dark:border-gray-700"
+            className="max-w-sm bg-white dark:bg-gray-800 dark:text-foreground dark:border-gray-700"
           />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800 dark:text-white dark:border-gray-700">
-              <SelectValue placeholder="Filter by Status" />
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800 dark:text-foreground dark:border-gray-700">
+              <SelectValue placeholder="Filter by Role" />
             </SelectTrigger>
-            <SelectContent className="bg-white dark:bg-gray-800 dark:text-white dark:border-gray-700">
-              <SelectItem value="All">All Statuses</SelectItem>
-              <SelectItem value="Active">Active</SelectItem>
-              <SelectItem value="On Leave">On Leave</SelectItem>
-              <SelectItem value="Resigned">Resigned</SelectItem>
-              <SelectItem value="Terminated">Terminated</SelectItem>
+            <SelectContent className="bg-white dark:bg-gray-800 dark:text-foreground dark:border-gray-700">
+              <SelectItem value="All">All Roles</SelectItem>
+              <SelectItem value="Admin">Admin</SelectItem>
+              <SelectItem value="HR">HR</SelectItem>
+              <SelectItem value="Employee">Employee</SelectItem>
             </SelectContent>
           </Select>
           {(userRole === "HR" || userRole === "Admin") && (
-            <Button onClick={() => setIsAddModalOpen(true)} className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white">
+            <Button onClick={() => setIsAddModalOpen(true)} className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-foreground">
               <Plus className="mr-2 h-4 w-4" /> Add Employee
             </Button>
           )}
@@ -257,26 +272,21 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
 
       <EmployeeTable
         employees={paginatedEmployees}
-        loading={loading}
+        loading={isLoading}
         sortConfig={sortConfig}
         handleSort={handleSort}
-        handleEdit={(employee) => {
-          setSelectedEmployee(employee);
-          setIsEditModalOpen(true);
-        }}
-        handleDelete={(employee) => { setSelectedEmployee(employee); setIsDeleteModalOpen(true); }}
         handleViewProfile={handleViewProfile}
         userRole={userRole}
         itemsPerPage={itemsPerPage}
       />
 
       {totalPages > 1 && (
-        <div className="mt-4 flex items-center gap-2 text-foreground dark:text-gray-200">
+        <div className="mt-4 flex items-center gap-2 text-foreground dark:text-foreground">
           <Button
             variant="outline"
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
-            className="dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
+            className="dark:bg-gray-700 dark:text-foreground dark:border-gray-600 dark:hover:bg-gray-600"
           >
             Previous
           </Button>
@@ -285,7 +295,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
             variant="outline"
             onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className="dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
+            className="dark:bg-gray-700 dark:text-foreground dark:border-gray-600 dark:hover:bg-gray-600"
           >
             Next
           </Button>
@@ -306,7 +316,16 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
         />
       </Dialog>
 
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      <Dialog
+        open={isViewModalOpen}
+        onOpenChange={(open) => {
+          setIsViewModalOpen(open);
+          if (!open) {
+            setIsEditable(false);
+            setSelectedEmployee(null);
+          }
+        }}
+      >
         {selectedEmployee && (
           <EmployeeForm
             employee={selectedEmployee}
@@ -315,10 +334,12 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
             designations={designations}
             onChange={handleEmployeeChange}
             onSave={handleUpdateEmployee}
-            onCancel={() => setIsEditModalOpen(false)}
+            onCancel={() => setIsViewModalOpen(false)}
             isSaving={isUpdating}
             userRole={userRole}
             isEditMode
+            isEditable={isEditable}
+            setIsEditable={setIsEditable}
           />
         )}
       </Dialog>

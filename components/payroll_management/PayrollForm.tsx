@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { useMemo } from "react";
+import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { Employee } from "@/types/employee";
-import { Salary } from "@/types/salary";
-import { Payroll, PayrollItem } from "@/types/payroll";
+import { Loader2, Edit as EditIcon } from "lucide-react";
+import { Employee, UserRole } from "@/types/employee";
+import { Salary, Payroll, PayrollItem, PayrollCycle } from "@/types/payroll";
 import { format } from "date-fns";
 
 interface PayrollFormProps {
@@ -18,308 +16,308 @@ interface PayrollFormProps {
   employees: Employee[];
   salaries: Salary[];
   payrollItems: PayrollItem[];
+  payrollCycles: PayrollCycle[];
   onChange: (updatedPayroll: Partial<Payroll>) => void;
   onSave: () => void;
   onCancel: () => void;
   isSaving: boolean;
+  userRole: UserRole;
   isEditMode?: boolean;
+  isEditable?: boolean;
+  setIsEditable?: (value: boolean) => void;
 }
 
-interface LocalPayroll extends Partial<Payroll> {
-  selectedPeriod?: string;
-}
+const formatCurrency = (value: number | undefined | null): string => {
+  return (value ?? 0).toLocaleString("en-US", {
+    style: "currency",
+    currency: "PHP",
+    minimumFractionDigits: value && value % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  });
+};
 
 const PayrollForm: React.FC<PayrollFormProps> = ({
   payroll,
   employees,
   salaries,
   payrollItems,
+  payrollCycles,
   onChange,
   onSave,
   onCancel,
   isSaving,
+  userRole,
   isEditMode = false,
+  isEditable = false,
+  setIsEditable,
 }) => {
-  const [localPayroll, setLocalPayroll] = useState<LocalPayroll>(payroll);
-
-  const getFullName = (employee: Employee): string => {
-    const user = employee.user;
-    return user
-      ? `${user.firstname} ${user.middlename ? user.middlename[0] + "." : ""} ${user.lastname} ${user.extension || ""}`.trim()
-      : `Employee #${employee.id}`;
-  };
-
-  const currentEmployeeName = () => {
-    if (localPayroll.employee) return getFullName(localPayroll.employee);
-    const employee = employees.find((emp) => emp.id === localPayroll.employee_id);
-    return employee ? getFullName(employee) : `Employee #${localPayroll.employee_id || "Unknown"}`;
-  };
-
-  // Compute unique payroll periods from all PayrollItems
-  const payrollPeriods = useMemo(() => {
-    console.log("All Payroll Items for Periods:", payrollItems);
-    const periods = new Set<string>();
-    payrollItems.forEach((item) => {
-      if (item.start_date && item.end_date) {
-        const period = `${format(new Date(item.start_date), "MMM dd, yyyy")} to ${format(new Date(item.end_date), "MMM dd, yyyy")}`;
-        periods.add(period);
-      } else {
-        console.warn(`PayrollItem ID ${item.id} missing start_date or end_date:`, item);
-      }
-    });
-
-    const periodOptions = Array.from(periods).map((period, index) => ({
-      id: index.toString(),
-      value: period,
-    }));
-    console.log("Computed Periods:", periodOptions);
-    return periodOptions;
-  }, [payrollItems]);
+  const getFullName = (emp: Employee) =>
+    emp.user
+      ? `${emp.user.firstname} ${emp.user.middlename ? emp.user.middlename[0] + "." : ""} ${emp.user.lastname}`.trim()
+      : `Employee #${emp.id}`;
 
   const calculatedTotals = useMemo(() => {
-    console.log("Selected Employee ID:", localPayroll.employee_id);
-    console.log("Selected Period:", localPayroll.selectedPeriod);
-    const employeeSalary = salaries.find((s) => s.employee_id === localPayroll.employee_id);
+    const employeeSalary = salaries.find((s) => s.employee_id === payroll.employee_id) || payroll.salary;
     const basicSalary = employeeSalary?.basic_salary || 0;
 
-    // Filter items by selected period, including both specific and global scope
-    const itemsForPeriod = localPayroll.selectedPeriod
-      ? payrollItems.filter((item) => {
-          if (item.start_date && item.end_date) {
-            const period = `${format(new Date(item.start_date), "MMM dd, yyyy")} to ${format(new Date(item.end_date), "MMM dd, yyyy")}`;
-            // Include items for this employee (specific) or global items (employee_id: null, scope: "global")
-            return period === localPayroll.selectedPeriod && 
-                   (item.employee_id === localPayroll.employee_id || item.scope === "global");
-          }
-          return false;
-        })
+    const itemsForPayroll = payroll.id
+      ? payrollItems.filter((item) => item.payroll_id === payroll.id)
       : [];
 
-    console.log("Items for Period (specific + global):", itemsForPeriod);
+    const earningsItems = itemsForPayroll.filter((item) => item.type === "earning");
+    const deductionsItems = itemsForPayroll.filter((item) => item.type === "deduction");
+    const contributionsItems = itemsForPayroll.filter((item) => item.type === "contribution");
 
-    const earningsItems = itemsForPeriod.filter((item) => item.type === "earning");
-    const deductionsItems = itemsForPeriod.filter((item) => item.type === "deduction");
-
-    console.log("Earnings Items:", earningsItems);
-    console.log("Deductions Items:", deductionsItems);
-
-    const totalEarnings = earningsItems.reduce((sum, item) => sum + Number(item.amount), 0);
+    const totalEarnings = earningsItems.reduce((sum, item) => sum + Number(item.amount), basicSalary);
     const totalDeductions = deductionsItems.reduce((sum, item) => sum + Number(item.amount), 0);
-    const netSalary = (Number(basicSalary) + totalEarnings) - totalDeductions;
-
-    console.log("Calculated Totals:", { basicSalary, totalEarnings, totalDeductions, netSalary });
+    const totalContributions = contributionsItems.reduce((sum, item) => sum + Number(item.amount), 0);
+    const netSalary = totalEarnings - totalDeductions - totalContributions;
 
     return {
       basic_salary: basicSalary,
-      total_earnings: totalEarnings,
+      total_earnings: totalEarnings - basicSalary,
       total_deductions: totalDeductions,
+      total_contributions: totalContributions,
       net_salary: netSalary,
+      earningsItems,
+      deductionsItems,
+      contributionsItems,
     };
-  }, [localPayroll.employee_id, localPayroll.selectedPeriod, salaries, payrollItems]);
+  }, [payroll.employee_id, payroll.id, salaries, payrollItems]);
 
-  const handleEmployeeChange = (value: string) => {
-    const employeeId = Number(value);
-    const employeeSalary = salaries.find((s) => s.employee_id === employeeId);
-    setLocalPayroll((prev) => ({
-      ...prev,
-      employee_id: employeeId,
-      salary_id: employeeSalary?.id || 0,
+  const payrollCycleOptions = useMemo(() => {
+    return payrollCycles.map((cycle) => ({
+      id: cycle.id.toString(),
+      value: `${format(new Date(cycle.start_date), "MMM dd, yyyy")} - ${format(new Date(cycle.end_date), "MMM dd, yyyy")}`,
     }));
-  };
+  }, [payrollCycles]);
 
-  const handlePeriodChange = (value: string) => {
-    setLocalPayroll((prev) => ({
-      ...prev,
-      selectedPeriod: value,
-    }));
-  };
+  const selectedCycle = payrollCycles.find((cycle) => cycle.id === payroll.payroll_cycles_id) || payroll.payroll_cycle;
+  const payrollPeriod = selectedCycle
+    ? `${format(new Date(selectedCycle.start_date), "MMM dd, yyyy")} - ${format(new Date(selectedCycle.end_date), "MMM dd, yyyy")}`
+    : "N/A";
+  const payDate = selectedCycle ? format(new Date(selectedCycle.pay_date), "MMMM dd, yyyy") : "N/A";
 
-  const handleSave = () => {
-    if (
-      !localPayroll.employee_id ||
-      !localPayroll.pay_date?.trim() ||
-      !localPayroll.pay_date.toString().trim() || 
-      !localPayroll.status?.trim() ||
-      !localPayroll.salary_id
-    ) {
-      toast.error("All fields are required, including a valid employee with a salary!");
-      return;
+  const handleEditClick = () => {
+    if (setIsEditable) {
+      setIsEditable(true);
     }
-    const pay = new Date(localPayroll.pay_date);
-    if (isNaN(pay.getTime())) {
-      toast.error("Invalid pay date format!");
-      return;
-    }
-    const { selectedPeriod, ...payload } = localPayroll;
-    payload.total_earnings = calculatedTotals.total_earnings;
-    payload.total_deductions = calculatedTotals.total_deductions;
-    payload.net_salary = calculatedTotals.net_salary;
-
-    console.log("Saving payload:", payload);
-    onChange(payload);
-    onSave();
   };
 
   return (
-    <DialogContent className="sm:max-w-[600px] bg-white">
+    <DialogContent className="sm:max-w-[800px] w-[80vw] bg-white dark:bg-gray-800 dark:text-foreground dark:border-gray-700">
       <DialogHeader>
-        <DialogTitle className="text-lg font-semibold">
-          {isEditMode ? "Edit Payroll" : "Add New Payroll"}
+        <DialogTitle className="text-foreground dark:text-foreground">
+          {isEditMode ? "View/Edit Payroll" : "Add New Payroll"}
         </DialogTitle>
-        <DialogDescription>
-          {isEditMode
-            ? "Modify the payroll details below."
-            : "Fill in the details to create a new payroll. Add items to adjust earnings and deductions."}
+        <DialogDescription className="text-muted-foreground dark:text-gray-300">
+          {isEditMode ? "View or update the payroll details." : "Enter the details for the new payroll."}
         </DialogDescription>
       </DialogHeader>
-      <div className="grid gap-4 py-4">
-        {/* Employee */}
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="employee" className="text-sm font-medium">Employee *</Label>
-          <Select
-            onValueChange={handleEmployeeChange}
-            value={localPayroll.employee_id ? localPayroll.employee_id.toString() : ""}
-            disabled={isEditMode}
-          >
-            <SelectTrigger className="w-full">
-              {isEditMode ? <span>{currentEmployeeName()}</span> : <SelectValue placeholder="Choose an employee" />}
-            </SelectTrigger>
-            <SelectContent>
-              {employees.length > 0 ? (
-                employees.map((employee) => (
-                  <SelectItem key={employee.id} value={employee.id.toString()}>
-                    {getFullName(employee)}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="none" disabled>No employees available</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Payroll Period Selection */}
-        <div className="flex flex-col gap-1">
-          <Label htmlFor="payroll_period" className="text-sm font-medium">Payroll Period</Label>
-          <Select
-            onValueChange={handlePeriodChange}
-            value={localPayroll.selectedPeriod || ""}
-            disabled={payrollPeriods.length === 0}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={payrollPeriods.length > 0 ? "Select a period" : "No periods available"} />
-            </SelectTrigger>
-            <SelectContent>
-              {payrollPeriods.length > 0 ? (
-                payrollPeriods.map((period) => (
-                  <SelectItem key={period.id} value={period.value}>
-                    {period.value}
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="none" disabled>No payroll items with periods</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Pay Date and Status */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="pay_date" className="text-sm font-medium">Pay Date *</Label>
+      <div className="grid gap-4 py-4 grid-cols-6">
+        <div className="col-span-2 flex flex-col gap-2">
+          <Label htmlFor="employee_id" className="text-foreground dark:text-foreground">Employee *</Label>
+          {isEditMode ? (
             <Input
-              id="pay_date"
-              type="date"
-              value={localPayroll.pay_date || ""}
-              onChange={(e) => setLocalPayroll((prev) => ({ ...prev, pay_date: e.target.value }))}
-              className="w-full"
-              required
+              id="edit-employee_id"
+              value={getFullName(employees.find((e) => e.id === payroll.employee_id) || { id: payroll.employee_id } as Employee)}
+              disabled
+              className="bg-gray-100 dark:bg-gray-600 dark:text-foreground dark:border-gray-500"
             />
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="status" className="text-sm font-medium">Status *</Label>
+          ) : (
             <Select
-              onValueChange={(value) => setLocalPayroll((prev) => ({ ...prev, status: value as Payroll["status"] }))}
-              value={localPayroll.status || ""}
+              value={payroll.employee_id?.toString() || ""}
+              onValueChange={(value) => {
+                const employeeId = parseInt(value) || 0;
+                const salary = salaries.find((s) => s.employee_id === employeeId);
+                onChange({ ...payroll, employee_id: employeeId, salary_id: salary?.id });
+              }}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select status" />
+              <SelectTrigger className="bg-white dark:bg-gray-700 dark:text-foreground dark:border-gray-600">
+                <SelectValue placeholder="Select Employee" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processed">Processed</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
+              <SelectContent className="bg-white dark:bg-gray-700 dark:text-foreground dark:border-gray-600">
+                {employees.map((emp) => (
+                  <SelectItem key={emp.id} value={emp.id.toString()}>
+                    {getFullName(emp)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-          </div>
-        </div>
-
-        {/* Earnings and Deductions */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="total_earnings" className="text-sm font-medium">Total Earnings</Label>
-            <Input
-              id="total_earnings"
-              type="number"
-              value={calculatedTotals.total_earnings || 0}
-              className="w-full bg-gray-100"
-              disabled
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="total_deductions" className="text-sm font-medium">Total Deductions</Label>
-            <Input
-              id="total_deductions"
-              type="number"
-              value={calculatedTotals.total_deductions || 0}
-              className="w-full bg-gray-100"
-              disabled
-            />
-          </div>
-        </div>
-
-         {/* Basic and Net */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="basic_salary" className="text-sm font-medium">Basic Salary</Label>
-            <Input
-              id="basic_salary"
-              type="number"
-              value={calculatedTotals.basic_salary || 0}
-              className="w-full bg-gray-100"
-              disabled
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="net_salary" className="text-sm font-medium">Net Salary</Label>
-            <Input
-              id="net_salary"
-              type="number"
-              value={calculatedTotals.net_salary || 0}
-              className="w-full bg-gray-100"
-              disabled
-            />
-          </div>
-        </div>
-      </div>
-
-      <DialogFooter className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel} className="px-4 py-2 text-sm">
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="px-4 py-2 text-sm flex items-center"
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-            </>
-          ) : (
-            "Save"
           )}
-        </Button>
+        </div>
+        <div className="col-span-2 flex flex-col gap-2">
+          <Label htmlFor="payroll_cycles_id" className="text-foreground dark:text-foreground">Payroll Period *</Label>
+          {isEditMode && !isEditable ? (
+            <Input
+              id="edit-payroll_cycles_id"
+              value={payrollPeriod}
+              disabled
+              className="bg-gray-100 dark:bg-gray-600 dark:text-foreground dark:border-gray-500"
+            />
+          ) : (
+            <Select
+              value={payroll.payroll_cycles_id?.toString() || ""}
+              onValueChange={(value) => onChange({ ...payroll, payroll_cycles_id: parseInt(value) || 0 })}
+              disabled={!isEditable && isEditMode}
+            >
+              <SelectTrigger className="bg-white dark:bg-gray-700 dark:text-foreground dark:border-gray-600">
+                <SelectValue placeholder="Select Payroll Cycle" />
+              </SelectTrigger>
+              <SelectContent className="bg-white dark:bg-gray-700 dark:text-foreground dark:border-gray-600">
+                {payrollCycleOptions.map((cycle) => (
+                  <SelectItem key={cycle.id} value={cycle.id}>
+                    {cycle.value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+        <div className="col-span-2 flex flex-col gap-2">
+          <Label htmlFor="pay_date" className="text-foreground dark:text-foreground">Pay Date</Label>
+          <Input
+            id="pay_date"
+            value={payDate}
+            disabled
+            className="bg-gray-100 dark:bg-gray-600 dark:text-foreground dark:border-gray-500"
+          />
+        </div>
+        <div className="col-span-2 flex flex-col gap-2">
+          <Label htmlFor="status" className="text-foreground dark:text-foreground">Status *</Label>
+          <Select
+            value={payroll.status || "pending"}
+            onValueChange={(value) => onChange({ ...payroll, status: value as Payroll["status"] })}
+            disabled={!isEditable && isEditMode}
+          >
+            <SelectTrigger className="bg-white dark:bg-gray-700 dark:text-foreground dark:border-gray-600">
+              <SelectValue placeholder="Select Status" />
+            </SelectTrigger>
+            <SelectContent className="bg-white dark:bg-gray-700 dark:text-foreground dark:border-gray-600">
+              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="processed">Processed</SelectItem>
+              <SelectItem value="paid">Paid</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="col-span-2 flex flex-col gap-2">
+          <Label htmlFor="basic_salary" className="text-foreground dark:text-foreground">Basic Salary</Label>
+          <Input
+            id="basic_salary"
+            value={formatCurrency(calculatedTotals.basic_salary)}
+            disabled
+            className="bg-gray-100 dark:bg-gray-600 dark:text-foreground dark:border-gray-500"
+          />
+        </div>
+        <div className="col-span-2 flex flex-col gap-2">
+          <Label htmlFor="total_earnings" className="text-foreground dark:text-foreground">Additional Earnings</Label>
+          <Input
+            id="total_earnings"
+            value={formatCurrency(calculatedTotals.total_earnings)}
+            disabled
+            className="bg-gray-100 dark:bg-gray-600 dark:text-foreground dark:border-gray-500"
+          />
+        </div>
+        <div className="col-span-2 flex flex-col gap-2">
+          <Label htmlFor="total_deductions" className="text-foreground dark:text-foreground">Total Deductions</Label>
+          <Input
+            id="total_deductions"
+            value={formatCurrency(calculatedTotals.total_deductions)}
+            disabled
+            className="bg-gray-100 dark:bg-gray-600 dark:text-foreground dark:border-gray-500"
+          />
+        </div>
+        <div className="col-span-2 flex flex-col gap-2">
+          <Label htmlFor="total_contributions" className="text-foreground dark:text-foreground">Total Contributions</Label>
+          <Input
+            id="total_contributions"
+            value={formatCurrency(calculatedTotals.total_contributions)}
+            disabled
+            className="bg-gray-100 dark:bg-gray-600 dark:text-foreground dark:border-gray-500"
+          />
+        </div>
+        <div className="col-span-2 flex flex-col gap-2">
+          <Label htmlFor="net_salary" className="text-foreground dark:text-foreground">Net Salary</Label>
+          <Input
+            id="net_salary"
+            value={formatCurrency(calculatedTotals.net_salary)}
+            disabled
+            className="bg-gray-100 dark:bg-gray-600 dark:text-foreground dark:border-gray-500 font-semibold"
+          />
+        </div>
+        {calculatedTotals.earningsItems.length > 0 && (
+          <div className="col-span-6 flex flex-col gap-2">
+            <Label className="text-foreground dark:text-foreground">Earnings Breakdown</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {calculatedTotals.earningsItems.map((item) => (
+                <div key={item.id} className="flex justify-between text-sm text-foreground dark:text-foreground">
+                  <span>{item.category || "Unnamed Earning"}</span>
+                  <span>{formatCurrency(item.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {calculatedTotals.deductionsItems.length > 0 && (
+          <div className="col-span-6 flex flex-col gap-2">
+            <Label className="text-foreground dark:text-foreground">Deductions Breakdown</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {calculatedTotals.deductionsItems.map((item) => (
+                <div key={item.id} className="flex justify-between text-sm text-foreground dark:text-foreground">
+                  <span>{item.category || "Unnamed Deduction"}</span>
+                  <span>{formatCurrency(item.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {calculatedTotals.contributionsItems.length > 0 && (
+          <div className="col-span-6 flex flex-col gap-2">
+            <Label className="text-foreground dark:text-foreground">Contributions Breakdown</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {calculatedTotals.contributionsItems.map((item) => (
+                <div key={item.id} className="flex justify-between text-sm text-foreground dark:text-foreground">
+                  <span>{item.category || "Unnamed Contribution"}</span>
+                  <span>{formatCurrency(item.amount)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      <DialogFooter className="flex justify-between gap-2">
+        {isEditMode && !isEditable && (
+          <Button
+            onClick={handleEditClick}
+            className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white flex items-center gap-2"
+          >
+            <EditIcon className="h-4 w-4" /> Edit
+          </Button>
+        )}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            className="dark:bg-gray-700 dark:text-foreground dark:border-gray-600 dark:hover:bg-gray-600"
+          >
+            Cancel
+          </Button>
+          {(isEditMode ? isEditable : true) && (
+            <Button
+              onClick={onSave}
+              disabled={isSaving}
+              className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-foreground"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          )}
+        </div>
       </DialogFooter>
     </DialogContent>
   );

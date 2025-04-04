@@ -9,7 +9,7 @@ import { apiFetch } from "@/services/api/apiPayrollCycle";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-export function PayrollCycleUpdate() {
+export function PayrollConfigUpdate() {
   const [configId, setConfigId] = useState("");
   const [startDay, setStartDay] = useState("");
   const [endDay, setEndDay] = useState("");
@@ -47,6 +47,7 @@ export function PayrollCycleUpdate() {
 
     setIsLoading(true);
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const configData: any = {};
       if (startYearMonth) configData.start_year_month = startYearMonth;
       if (startDayNum) configData.first_start_day = startDayNum;
@@ -58,6 +59,8 @@ export function PayrollCycleUpdate() {
       await apiFetch(`/payroll-config/${configId}`, "PUT", configData);
       toast.success("Payroll cycle updated successfully!");
       resetForm();
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to update payroll cycle");
     } finally {

@@ -8,12 +8,14 @@ import {
 import { fetchEmployees } from "@/services/api/apiEmployee"; // Use all employees
 import { Employee, Salary } from "@/types/salary";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/AuthContext";
 
 export const useSalaryData = () => {
   const [salaries, setSalaries] = useState<Salary[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
 
   useEffect(() => {
     const loadData = async () => {
@@ -23,7 +25,7 @@ export const useSalaryData = () => {
 
         const [salaryData, employeeData] = await Promise.all([
           fetchSalaries(),
-          fetchEmployees(), // Fetch all employees
+          fetchEmployees(token), // Fetch all employees
         ]);
 
         console.log("Fetched salaries:", salaryData);
@@ -57,7 +59,7 @@ export const useSalaryData = () => {
     try {
       const newSalary = await createSalary(salary);
       const updatedSalaries = await fetchSalaries(); // Refresh full list
-      const employeeData = await fetchEmployees();
+      const employeeData = await fetchEmployees(token);
       const enrichedSalaries = updatedSalaries.map((sal) => ({
         ...sal,
         employee: employeeData.find((emp) => emp.id === sal.employee_id),
@@ -81,7 +83,7 @@ export const useSalaryData = () => {
     try {
       await updateSalary(id, salary);
       const updatedSalaries = await fetchSalaries();
-      const employeeData = await fetchEmployees();
+      const employeeData = await fetchEmployees(token);
       const enrichedSalaries = updatedSalaries.map((sal) => ({
         ...sal,
         employee: employeeData.find((emp) => emp.id === sal.employee_id),
@@ -103,7 +105,7 @@ export const useSalaryData = () => {
     try {
       await deleteSalary(id);
       const updatedSalaries = await fetchSalaries();
-      const employeeData = await fetchEmployees();
+      const employeeData = await fetchEmployees(token);
       const enrichedSalaries = updatedSalaries.map((sal) => ({
         ...sal,
         employee: employeeData.find((emp) => emp.id === sal.employee_id),

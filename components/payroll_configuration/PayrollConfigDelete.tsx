@@ -9,7 +9,7 @@ import { apiFetch } from "@/services/api/apiPayrollCycle";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-export function PayrollCycleDelete() {
+export function PayrollConfigDelete() {
   const [configId, setConfigId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,6 +24,8 @@ export function PayrollCycleDelete() {
       await apiFetch(`/payroll-config/${configId}`, "DELETE");
       toast.success("Payroll cycle deleted successfully!");
       setConfigId("");
+      
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to delete payroll cycle");
     } finally {

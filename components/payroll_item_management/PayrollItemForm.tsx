@@ -16,6 +16,7 @@ interface PayrollItemFormProps {
   onCancel: () => void;
   isSaving: boolean;
   isEditMode?: boolean;
+  isViewMode?: boolean; // New prop for view-only mode
 }
 
 const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
@@ -26,6 +27,7 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
   onCancel,
   isSaving,
   isEditMode = false,
+  isViewMode = false,
 }) => {
   const getFullName = (employee: Employee): string => {
     const user = employee.user;
@@ -44,58 +46,66 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
     <DialogContent className="sm:max-w-[600px]">
       <DialogHeader>
         <DialogTitle className="text-lg font-semibold">
-          {isEditMode ? "Edit Payroll Item" : "Add New Payroll Item"}
+          {isViewMode ? "View Payroll Item" : isEditMode ? "Edit Payroll Item" : "Add New Payroll Item"}
         </DialogTitle>
       </DialogHeader>
       <div className="grid gap-3 py-3">
         {/* Scope */}
         <div className="flex flex-col gap-1">
           <Label htmlFor="scope" className="text-sm font-medium">Scope *</Label>
-          <Select
-            onValueChange={(value) =>
-              onChange({
-                ...payrollItem,
-                scope: value as "specific" | "global",
-                employee_id: value === "global" ? undefined : payrollItem.employee_id,
-              })
-            }
-            value={payrollItem.scope || ""}
-            disabled={isEditMode}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select scope" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="specific">Specific Employee</SelectItem>
-              <SelectItem value="global">All Employees</SelectItem>
-            </SelectContent>
-          </Select>
+          {isViewMode ? (
+            <Input value={payrollItem.scope || ""} readOnly className="w-full" />
+          ) : (
+            <Select
+              onValueChange={(value) =>
+                onChange({
+                  ...payrollItem,
+                  scope: value as "specific" | "global",
+                  employee_id: value === "global" ? undefined : payrollItem.employee_id,
+                })
+              }
+              value={payrollItem.scope || ""}
+              disabled={isEditMode}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select scope" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="specific">Specific Employee</SelectItem>
+                <SelectItem value="global">All Employees</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Employee Select (only if scope is specific) */}
         {payrollItem.scope === "specific" && (
           <div className="flex flex-col gap-1">
             <Label htmlFor="employee" className="text-sm font-medium">Employee *</Label>
-            <Select
-              onValueChange={(value) => onChange({ ...payrollItem, employee_id: Number(value) })}
-              value={payrollItem.employee_id ? payrollItem.employee_id.toString() : ""}
-              disabled={isEditMode}
-            >
-              <SelectTrigger className="w-full">
-                {isEditMode ? <span>{currentEmployeeName()}</span> : <SelectValue placeholder="Choose an employee" />}
-              </SelectTrigger>
-              <SelectContent>
-                {employees.length > 0 ? (
-                  employees.map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id.toString()}>
-                      {getFullName(employee)}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="none" disabled>No employees available</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            {isViewMode ? (
+              <Input value={currentEmployeeName()} readOnly className="w-full" />
+            ) : (
+              <Select
+                onValueChange={(value) => onChange({ ...payrollItem, employee_id: Number(value) })}
+                value={payrollItem.employee_id ? payrollItem.employee_id.toString() : ""}
+                disabled={isEditMode}
+              >
+                <SelectTrigger className="w-full">
+                  {isEditMode ? <span>{currentEmployeeName()}</span> : <SelectValue placeholder="Choose an employee" />}
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.length > 0 ? (
+                    employees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id.toString()}>
+                        {getFullName(employee)}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>No employees available</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         )}
 
@@ -112,7 +122,8 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
                 value={payrollItem.start_date || ""}
                 onChange={(e) => onChange({ ...payrollItem, start_date: e.target.value })}
                 className="w-full"
-                disabled={isEditMode}
+                disabled={isEditMode || isViewMode}
+                readOnly={isViewMode}
               />
             </div>
             <div className="flex items-center">
@@ -127,7 +138,8 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
                 value={payrollItem.end_date || ""}
                 onChange={(e) => onChange({ ...payrollItem, end_date: e.target.value })}
                 className="w-full"
-                disabled={isEditMode}
+                disabled={isEditMode || isViewMode}
+                readOnly={isViewMode}
               />
             </div>
           </div>
@@ -139,19 +151,23 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
           <div className="flex flex-row gap-2">
             <div className="flex-1">
               <Label htmlFor="type" className="sr-only">Type</Label>
-              <Select
-                onValueChange={(value) => onChange({ ...payrollItem, type: value as PayrollItem["type"] })}
-                value={payrollItem.type || ""}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="earning">Earning</SelectItem>
-                  <SelectItem value="deduction">Deduction</SelectItem>
-                  <SelectItem value="contribution">Contribution</SelectItem>
-                </SelectContent>
-              </Select>
+              {isViewMode ? (
+                <Input value={payrollItem.type || ""} readOnly className="w-full" />
+              ) : (
+                <Select
+                  onValueChange={(value) => onChange({ ...payrollItem, type: value as PayrollItem["type"] })}
+                  value={payrollItem.type || ""}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="earning">Earning</SelectItem>
+                    <SelectItem value="deduction">Deduction</SelectItem>
+                    <SelectItem value="contribution">Contribution</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="flex-1">
               <Label htmlFor="category" className="sr-only">Category</Label>
@@ -161,6 +177,7 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
                 value={payrollItem.category || ""}
                 onChange={(e) => onChange({ ...payrollItem, category: e.target.value })}
                 className="w-full"
+                readOnly={isViewMode}
               />
             </div>
           </div>
@@ -177,27 +194,30 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
             className="w-full"
             min="0"
             step="0.01"
+            readOnly={isViewMode}
           />
         </div>
       </div>
 
       <DialogFooter className="flex justify-end gap-2">
         <Button variant="outline" onClick={onCancel} className="px-4 py-2 text-sm">
-          Cancel
+          {isViewMode ? "Close" : "Cancel"}
         </Button>
-        <Button
-          onClick={onSave}
-          disabled={isSaving}
-          className="px-4 py-2 text-sm flex items-center"
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-            </>
-          ) : (
-            "Save"
-          )}
-        </Button>
+        {!isViewMode && (
+          <Button
+            onClick={onSave}
+            disabled={isSaving}
+            className="px-4 py-2 text-sm flex items-center"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+              </>
+            ) : (
+              "Save"
+            )}
+          </Button>
+        )}
       </DialogFooter>
     </DialogContent>
   );

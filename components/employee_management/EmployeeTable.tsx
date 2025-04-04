@@ -4,15 +4,14 @@ import { ChevronUp, ChevronDown } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
 import { Employee, SortKey, UserRole } from "@/types/employee";
 import EmployeeActions from "./EmployeeActions";
+import { useMemo } from "react";
 
 interface EmployeeTableProps {
   employees: Employee[];
   loading: boolean;
   sortConfig: { key: SortKey; direction: "asc" | "desc" } | null;
   handleSort: (key: SortKey) => void;
-  handleEdit: (employee: Employee) => void;
-  handleDelete: (employee: Employee) => void;
-  handleViewProfile: (employee: Employee) => void;
+  handleViewProfile: (employee: Employee) => void; // Renamed from handleView
   userRole: UserRole;
   itemsPerPage: number;
 }
@@ -22,8 +21,6 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   loading,
   sortConfig,
   handleSort,
-  handleEdit,
-  handleDelete,
   handleViewProfile,
   userRole,
   itemsPerPage,
@@ -53,34 +50,57 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         } ${employees.find((e) => e.user_id === parseInt(reportsTo))!.user!.lastname}`.trim()
       : "N/A";
 
+  const getRoleVariant = (role: UserRole | undefined) => {
+    switch (role) {
+      case "Admin":
+        return "default";
+      case "HR":
+        return "secondary";
+      case "Employee":
+        return "outline";
+      default:
+        return "destructive"; // For undefined or unexpected roles
+    }
+  };
+
+  const renderKey = useMemo(() => Date.now(), []);
+
   return (
     <Table className="w-full max-w-6xl bg-white dark:bg-gray-800 dark:border-gray-700">
-      <TableCaption className="dark:text-gray-300">Comprehensive employee management directory.</TableCaption>
+      <TableCaption className="text-muted-foreground dark:text-gray-300">
+        Comprehensive employee management directory.
+      </TableCaption>
       <TableHeader>
         <TableRow className="dark:bg-gray-700">
-          <TableHead className="w-[50px] cursor-pointer dark:text-gray-200" onClick={() => handleSort("id")}>
-            No. <SortIcon column="id" />
-          </TableHead>
-          <TableHead className="cursor-pointer dark:text-gray-200" onClick={() => handleSort("user.lastname")}>
+          <TableHead
+            className="cursor-pointer text-foreground dark:text-foreground"
+            onClick={() => handleSort("user.lastname")}
+          >
             Name <SortIcon column="user.lastname" />
           </TableHead>
-          <TableHead className="dark:text-gray-200">Employee No.</TableHead>
-          <TableHead className="cursor-pointer dark:text-gray-200" onClick={() => handleSort("designation.designation")}>
+          <TableHead className="text-foreground dark:text-foreground">Employee No.</TableHead>
+          <TableHead
+            className="cursor-pointer text-foreground dark:text-foreground"
+            onClick={() => handleSort("designation.designation")}
+          >
             Designation <SortIcon column="designation.designation" />
           </TableHead>
-          <TableHead className="cursor-pointer dark:text-gray-200" onClick={() => handleSort("department.department")}>
+          <TableHead
+            className="cursor-pointer text-foreground dark:text-foreground"
+            onClick={() => handleSort("department.department")}
+          >
             Department <SortIcon column="department.department" />
           </TableHead>
-          <TableHead className="dark:text-gray-200">Supervisor</TableHead>
-          <TableHead className="dark:text-gray-200">Birth Date</TableHead>
-          <TableHead className="dark:text-gray-200">Status</TableHead>
-          <TableHead className="w-[50px] text-center dark:text-gray-200">Actions</TableHead>
+          <TableHead className="text-foreground dark:text-foreground">Supervisor</TableHead>
+          <TableHead className="text-foreground dark:text-foreground">Birth Date</TableHead>
+          <TableHead className="text-foreground dark:text-foreground">Role</TableHead>
+          <TableHead className="w-[100px] text-center text-foreground dark:text-foreground">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {loading ? (
-          Array.from({ length: itemsPerPage }).map((_, index) => (
-            <TableRow key={`skeleton-${index}`} className="dark:bg-gray-800">
+          Array.from({ length: itemsPerPage }, (_, index) => (
+            <TableRow key={`skeleton-${renderKey}-${index}`} className="dark:bg-gray-800">
               <TableCell><Skeleton className="h-4 w-8 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
@@ -88,44 +108,56 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
-              <TableCell className="text-center"><Skeleton className="h-6 w-6 mx-auto dark:bg-gray-600" /></TableCell>
+              <TableCell className="text-center"><Skeleton className="h-8 w-20 mx-auto dark:bg-gray-600" /></TableCell>
             </TableRow>
           ))
         ) : employees.length > 0 ? (
           employees.map((employee, index) => (
-            <TableRow key={employee.id} className="dark:bg-gray-800 dark:hover:bg-gray-700">
-              <TableCell className="dark:text-gray-200">{index + 1}</TableCell>
-              <TableCell className="dark:text-gray-200">{getFullName(employee)}</TableCell>
-              <TableCell className="dark:text-gray-200">{employee.company_id_number || "N/A"}</TableCell>
-              <TableCell className="dark:text-gray-200">{employee.designation?.designation || "N/A"}</TableCell>
-              <TableCell className="dark:text-gray-200">{employee.department?.department || "N/A"}</TableCell>
-              <TableCell className="dark:text-gray-200">{getSupervisorName(employee.reports_to)}</TableCell>
-              <TableCell className="dark:text-gray-200">
-                {employee.birthdate ? new Date(employee.birthdate).toLocaleDateString() : "N/A"}
+            <TableRow
+              key={employee.id ?? `temp-${index}-${Date.now()}`}
+              className="dark:bg-gray-800 dark:hover:bg-gray-700"
+            >
+              <TableCell className="text-foreground dark:text-foreground">{getFullName(employee)}</TableCell>
+              <TableCell className="text-foreground dark:text-foreground">{employee.company_id_number || "N/A"}</TableCell>
+              <TableCell className="text-foreground dark:text-foreground">{employee.designation?.designation || "N/A"}</TableCell>
+              <TableCell className="text-foreground dark:text-foreground">{employee.department?.department || "N/A"}</TableCell>
+              <TableCell className="text-foreground dark:text-foreground">{getSupervisorName(employee.reports_to)}</TableCell>
+              <TableCell className="text-foreground dark:text-foreground">
+                {employee.birthdate ? new Date(employee.birthdate).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                }) : "N/A"}
               </TableCell>
               <TableCell>
                 <Badge
-                  variant={employee.isActive === 1 ? "default" : employee.isActive === 0 ? "secondary" : "destructive"}
-                  className={employee.isActive === 1 ? "dark:bg-green-600" : "dark:bg-gray-600"}
+                  variant={getRoleVariant(employee.user?.role_name as UserRole)}
+                  className={
+                    employee.user?.role_name === "Admin"
+                      ? "dark:bg-blue-600"
+                      : employee.user?.role_name === "HR"
+                      ? "dark:bg-purple-600"
+                      : employee.user?.role_name === "Employee"
+                      ? "dark:bg-gray-600"
+                      : "dark:bg-red-600"
+                  }
                 >
-                  {employee.isActive === 1 ? "Active" : "Inactive"}
+                  {employee.user?.role_name || "N/A"}
                 </Badge>
               </TableCell>
               <TableCell className="text-center">
-                <EmployeeActions
-                  employee={employee}
-                  userRole={userRole}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onViewProfile={handleViewProfile}
-                />
+                <div className="flex justify-center">
+                  <EmployeeActions
+                    employee={employee}
+                    onView={handleViewProfile}
+                  />
+                </div>
               </TableCell>
             </TableRow>
           ))
         ) : (
           <TableRow className="dark:bg-gray-800">
-            <TableCell colSpan={9} className="text-center dark:text-gray-300">
+            <TableCell colSpan={8} className="text-center text-muted-foreground dark:text-gray-300">
               No employees found.
             </TableCell>
           </TableRow>

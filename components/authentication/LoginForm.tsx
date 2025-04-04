@@ -8,39 +8,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/AuthContext";
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const router = useRouter();
+  const { login } = useAuth();
 
-  // Fetch CSRF token on mount
   useEffect(() => {
     const fetchCsrfToken = async () => {
       try {
         const response = await fetch("http://127.0.0.1:8000/sanctum/csrf-cookie", {
           method: "GET",
-          credentials: "include", // Include cookies
+          credentials: "include",
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch CSRF token");
-        }
-
-        // CSRF token is set in cookies; no need to extract it explicitly
-        setCsrfToken("fetched"); // Just flag it as fetched
-        console.error("Fetching CSRF token:", response);
+        if (!response.ok) throw new Error(`Failed to fetch CSRF token: ${response.status}`);
+        setCsrfToken("fetched");
+        console.log("CSRF token fetched successfully");
       } catch (err) {
         console.error("Error fetching CSRF token:", err);
         toast.error("Failed to initialize login session");
       }
     };
-
     fetchCsrfToken();
   }, []);
 
@@ -49,27 +43,25 @@ export function LoginForm({
     setLoading(true);
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/login", {
+      const response = await fetch("/api/login", {
         method: "POST",
-        // mode: "no-cors",
         headers: {
           "Content-Type": "application/json",
-          Accept: "application/json",
-          "X-XSRF-TOKEN": csrfToken || "", // Optional if CSRF is handled via cookies
+          "Accept": "application/json",
         },
-        // credentials: "include", // Include cookies for session and CSRF
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
+      console.log("Login response status:", response.status);
       const data = await response.json();
+      console.log("Login response data:", data);
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
+      if (!response.ok) throw new Error(data.message || "Login failed");
 
-      console.log("Login successful:", data);
+      await login(data.access_token, data.user);
       toast.success("Logged in successfully!");
-      router.push("/dashboard/admin"); // Adjust redirect path as needed
+      router.push("/dashboard");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "An error occurred");
       console.error("Login error:", err);
@@ -82,13 +74,14 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden">
         <CardContent className="grid p-0 md:grid-cols-2">
-          <div className="relative hidden bg-muted md:block h-64">
+          <div className="relative hidden bg-muted md:flex md:h-96 md:items-center md:justify-center">
             <img
               src="/assets/images/bfd.jpg"
               alt="BFD Logo"
-              className="absolute inset-0 h-full w-full object-fit dark:brightness-[0.2] dark:grayscale"
+              className="h-full w-full object-cover object-center"
             />
           </div>
+
           <form className="p-6 md:p-8" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-6">
               <div className="flex flex-col items-center text-center">
@@ -112,10 +105,7 @@ export function LoginForm({
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
-                    className="ml-auto text-sm underline-offset-2 hover:underline"
-                  >
+                  <a href="#" className="ml-auto text-sm underline-offset-2 hover:underline">
                     Forgot your password?
                   </a>
                 </div>
@@ -128,7 +118,6 @@ export function LoginForm({
                   disabled={loading}
                 />
               </div>
-              {/* <Button type="submit" className="w-full" disabled={loading || !csrfToken}> */}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Logging in..." : "Login"}
               </Button>
@@ -167,8 +156,8 @@ export function LoginForm({
                 </Button>
               </div>
               <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
+                Don’t have an account?{" "}
+                <a href="/register" className="underline underline-offset-4">
                   Sign up
                 </a>
               </div>

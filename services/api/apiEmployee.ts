@@ -2,52 +2,77 @@ import { Employee, User, Department, Designation } from "../../types/employee";
 
 const BASE_URL = "http://127.0.0.1:8000/api";
 
-const getAuthToken = () =>
-  localStorage.getItem("auth_token") || "your-sanctum-token-here";
-
 const apiFetch = async <T>(
   endpoint: string,
   method: string,
+  token: string | null, // Token from useAuth
   body?: any
 ): Promise<T> => {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${getAuthToken()}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}), // Only add if token exists
       Accept: "application/json",
     },
     body: body ? JSON.stringify(body) : undefined,
     cache: "no-store",
+    credentials: "include", // Match your axios withCredentials: true
   });
+
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(
+    const error = new Error(
       errorData.message || `HTTP error! Status: ${response.status}`
     );
+    (error as any).response = errorData;
+    throw error;
   }
+
   return response.json();
 };
 
-export const fetchEmployees = () => apiFetch<Employee[]>("/employees", "GET");
+export const fetchEmployees = (token: string | null) =>
+  apiFetch<Employee[]>("/employees", "GET", token);
 
-export const fetchUsers = () =>
-  apiFetch<User[]>("/users-doesnt-have-employee", "GET");
+export const fetchUsers = (token: string | null) =>
+  apiFetch<User[]>("/users-doesnt-have-employee", "GET", token);
 
-export const fetchDepartments = () =>
-  apiFetch<Department[]>("/departments", "GET");
+export const fetchDepartments = (token: string | null) =>
+  apiFetch<Department[]>("/departments", "GET", token);
 
-export const fetchDesignations = () =>
-  apiFetch<Designation[]>("/designations", "GET");
+export const fetchDesignations = (token: string | null) =>
+  apiFetch<Designation[]>("/designations", "GET", token);
 
-export const fetchEmployee = (id: number) =>
-  apiFetch<Employee>(`/employees/${id}`, "GET");
+export const fetchEmployee = (id: number, token: string | null) =>
+  apiFetch<Employee>(`/employees/${id}`, "GET", token);
 
-export const createEmployee = (data: Partial<Employee>) =>
-  apiFetch<Employee>("/employees", "POST", data);
+export const createEmployee = async (
+  data: Partial<Employee>,
+  token: string | null
+): Promise<Employee> => {
+  const response = await apiFetch<any>("/employees", "POST", token, data);
+  console.log("Raw API response from createEmployee:", response);
 
-export const updateEmployee = (id: number, data: Partial<Employee>) =>
-  apiFetch<Employee>(`/employees/${id}`, "PUT", data);
+  if (!response.employee) {
+    throw new Error("Invalid server response: 'employee' object missing");
+  }
 
-export const deleteEmployee = (id: number) =>
-  apiFetch<void>(`/employees/${id}`, "DELETE");
+  const employeeData = response.employee;
+  console.log("Extracted employee data:", employeeData);
+
+  if (!employeeData.id) {
+    throw new Error("Employee ID missing in employee data");
+  }
+
+  return employeeData;
+};
+
+export const updateEmployee = (
+  id: number,
+  data: Partial<Employee>,
+  token: string | null
+) => apiFetch<Employee>(`/employees/${id}`, "PUT", token, data);
+
+export const deleteEmployee = (id: number, token: string | null) =>
+  apiFetch<void>(`/employees/${id}`, "DELETE", token);

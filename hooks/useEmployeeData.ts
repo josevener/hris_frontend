@@ -1,18 +1,13 @@
 import { useState, useEffect, Dispatch, SetStateAction } from "react";
 import { toast } from "sonner";
-import {
-  Employee,
-  User,
-  Department,
-  Designation,
-  SortKey,
-} from "../types/employee";
+import { Employee, User, Department, Designation } from "../types/employee";
 import {
   fetchEmployees,
   fetchUsers,
   fetchDepartments,
   fetchDesignations,
 } from "../services/api/apiEmployee";
+import { useAuth } from "@/lib/AuthContext"; // Adjust path
 
 interface UseEmployeeData {
   employees: Employee[];
@@ -26,6 +21,7 @@ interface UseEmployeeData {
 }
 
 export const useEmployeeData = (): UseEmployeeData => {
+  const { token } = useAuth(); // Get token from AuthContext
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -41,10 +37,10 @@ export const useEmployeeData = (): UseEmployeeData => {
 
         const [employeeData, userData, deptData, desigData] = await Promise.all(
           [
-            fetchEmployees(),
-            fetchUsers(),
-            fetchDepartments(),
-            fetchDesignations(),
+            fetchEmployees(token),
+            fetchUsers(token),
+            fetchDepartments(token),
+            fetchDesignations(token),
           ]
         );
 
@@ -61,8 +57,8 @@ export const useEmployeeData = (): UseEmployeeData => {
       }
     };
 
-    loadData();
-  }, []);
+    if (token) loadData(); // Only fetch if token is available
+  }, [token]);
 
   return {
     employees,

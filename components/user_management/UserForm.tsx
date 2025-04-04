@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Edit as EditIcon } from "lucide-react";
 import { User, UserRole } from "@/types/employee";
 import { toast } from "sonner";
 
@@ -21,6 +21,8 @@ interface UserFormProps {
   isEditMode?: boolean;
   userRole?: UserRole;
   originalEmail?: string;
+  isEditable?: boolean; // Made optional
+  setIsEditable?: (value: boolean) => void; // Made optional
 }
 
 const UserForm: React.FC<UserFormProps> = ({
@@ -32,20 +34,18 @@ const UserForm: React.FC<UserFormProps> = ({
   isEditMode = false,
   userRole,
   originalEmail,
+  isEditable = false, // Default to false if not provided
+  setIsEditable,
 }) => {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loadingAction, setLoadingAction] = useState(false);
 
-  // Validate email format
   const validateEmailFormat = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  // Check email uniqueness against backend
   const checkEmailUniqueness = async (email: string) => {
     if (!email || !validateEmailFormat(email) || email === originalEmail) {
       setEmailError(null);
@@ -82,7 +82,6 @@ const UserForm: React.FC<UserFormProps> = ({
     }
   };
 
-  // Handle email input change with validation
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const email = e.target.value;
     onChange({ ...user, email });
@@ -174,19 +173,25 @@ const UserForm: React.FC<UserFormProps> = ({
     if (validateUser()) {
       setLoadingAction(true);
       try {
-        await onSave();
+        onSave();
       } finally {
         setLoadingAction(false);
       }
     }
   };
 
+  const handleEditClick = () => {
+    if (setIsEditable) {
+      setIsEditable(true);
+    }
+  };
+
   return (
     <DialogContent className="sm:max-w-[900px] w-[90vw]">
       <DialogHeader>
-        <DialogTitle>{isEditMode ? "Edit User" : "Add New User"}</DialogTitle>
+        <DialogTitle>{isEditMode ? "View/Edit User" : "Add New User"}</DialogTitle>
         <DialogDescription>
-          {isEditMode ? "Update the user’s details." : "Enter the details for the new user."}
+          {isEditMode ? "View or update the user’s details." : "Enter the details for the new user."}
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-7 py-4 grid-cols-1">
@@ -199,7 +204,7 @@ const UserForm: React.FC<UserFormProps> = ({
               onChange={(e) => onChange({ ...user, firstname: e.target.value })}
               placeholder="Enter first name"
               required
-              disabled={isEditMode && userRole === "Employee"}
+              disabled={isEditMode && !isEditable} // Simplified logic
               maxLength={255}
             />
           </div>
@@ -211,7 +216,7 @@ const UserForm: React.FC<UserFormProps> = ({
               onChange={(e) => onChange({ ...user, lastname: e.target.value })}
               placeholder="Enter last name"
               required
-              disabled={isEditMode && userRole === "Employee"}
+              disabled={isEditMode && !isEditable}
               maxLength={255}
             />
           </div>
@@ -222,7 +227,7 @@ const UserForm: React.FC<UserFormProps> = ({
               value={user?.middlename || ""}
               onChange={(e) => onChange({ ...user, middlename: e.target.value })}
               placeholder="Enter middle name (optional)"
-              disabled={isEditMode && userRole === "Employee"}
+              disabled={isEditMode && !isEditable}
               maxLength={255}
             />
           </div>
@@ -235,7 +240,7 @@ const UserForm: React.FC<UserFormProps> = ({
               value={user?.extension || ""}
               onChange={(e) => onChange({ ...user, extension: e.target.value })}
               placeholder="e.g., Jr., Sr. (optional)"
-              disabled={isEditMode && userRole === "Employee"}
+              disabled={isEditMode && !isEditable}
               maxLength={255}
             />
           </div>
@@ -249,7 +254,7 @@ const UserForm: React.FC<UserFormProps> = ({
               onBlur={() => checkEmailUniqueness(user?.email || "")}
               placeholder="Enter email address"
               required
-              disabled={isEditMode && userRole === "Employee"}
+              disabled={isEditMode && !isEditable}
               className={emailError ? "border-red-500" : ""}
             />
             {emailError && <p className="text-red-500 text-sm">{emailError}</p>}
@@ -260,7 +265,7 @@ const UserForm: React.FC<UserFormProps> = ({
             <Select
               value={user?.role_name || ""}
               onValueChange={(value) => onChange({ ...user, role_name: value })}
-              disabled={isEditMode && userRole === "Employee"}
+              disabled={isEditMode && !isEditable}
             >
               <SelectTrigger id={isEditMode ? "edit-role_name" : "role_name"}>
                 <SelectValue placeholder="Select Role" />
@@ -281,7 +286,7 @@ const UserForm: React.FC<UserFormProps> = ({
               value={user?.phone_number || ""}
               onChange={(e) => onChange({ ...user, phone_number: e.target.value })}
               placeholder="Enter phone number (optional)"
-              disabled={isEditMode && userRole === "Employee"}
+              disabled={isEditMode && !isEditable}
               maxLength={255}
             />
           </div>
@@ -294,7 +299,7 @@ const UserForm: React.FC<UserFormProps> = ({
               onChange={(e) => onChange({ ...user, password: e.target.value })}
               placeholder={isEditMode ? "Leave blank to keep unchanged" : "Min 8 characters"}
               required={!isEditMode}
-              disabled={isEditMode && userRole === "Employee"}
+              disabled={isEditMode && !isEditable}
             />
           </div>
           {!isEditMode && (
@@ -312,24 +317,37 @@ const UserForm: React.FC<UserFormProps> = ({
           )}
         </div>
       </div>
-      <DialogFooter className="flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel} disabled={isCheckingEmail || isSaving}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSave}
-          disabled={isCheckingEmail || isSaving}
-          className="relative"
-        >
-          {isSaving && (
-            <span className="absolute inset-0 flex items-center justify-center">
-              <Loader2 className="h-5 w-5 animate-spin text-white" /> Saving...
-            </span>
+      <DialogFooter className="flex justify-between gap-2">
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onCancel} disabled={isCheckingEmail || isSaving}>
+            Cancel
+          </Button>
+          {(isEditMode ? isEditable : true) && (
+            <Button
+              onClick={handleSave}
+              disabled={isCheckingEmail || isSaving}
+              className="relative"
+            >
+              {isSaving && (
+                <span className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-white" /> Saving...
+                </span>
+              )}
+              <span className={isSaving ? "opacity-0" : "opacity-100"}>
+                {isEditMode ? "Save Changes" : "Save"}
+              </span>
+            </Button>
           )}
-          <span className={isSaving ? "opacity-0" : "opacity-100"}>
-            {isEditMode ? "Save Changes" : "Add User"}
-          </span>
-        </Button>
+        </div>
+
+        {isEditMode && !isEditable && (
+          <Button
+            onClick={handleEditClick}
+            className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white flex items-center gap-2"
+          >
+            <EditIcon className="h-4 w-4" /> Edit
+          </Button>
+        )}
       </DialogFooter>
     </DialogContent>
   );

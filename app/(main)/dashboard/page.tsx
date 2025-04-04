@@ -1,6 +1,6 @@
 "use client"; // Client-side component
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   BarChart as RechartsBarChart, 
   Bar, 
@@ -48,6 +48,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ModeToggle } from "@/components/mode-toggle";
 import { NumberTicker } from "@/components/magicui/number-ticker";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/AuthContext";
 
 // Sample Data
 const workforceData = { active: 180, onLeave: 10, resigned: 5 };
@@ -87,6 +89,27 @@ export default function HRISAdminDashboard() {
     [deptFilter]
   );
 
+  const { token, user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    console.log("Dashboard - Token:", token, "User:", user, "Loading:", loading);
+    if (!loading && !token) {
+      console.log("No token after loading, redirecting to /login");
+      router.push("/login");
+    }
+  }, [token, loading, router]);
+
+  // if (loading) {
+  //   console.log("Rendering loading state");
+  //   return <div>Loading...</div>;
+  // }
+
+  if (!token) {
+    console.log("No token, rendering null");
+    return null;
+  }
+  
   return (
     <div className={`container mx-auto p-6 space-y-8 ${darkMode ? "dark" : ""}`} suppressHydrationWarning>
       {/* Header with Quick Actions & Theme Toggle */}

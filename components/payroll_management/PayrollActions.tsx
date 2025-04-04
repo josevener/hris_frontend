@@ -1,48 +1,19 @@
 import { Payroll } from "@/types/payroll";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { MoreVertical, Edit, Trash, FileText } from "lucide-react";
-import { UserRole } from "@/types/employee";
+import { Button } from "@/components/ui/button";
+import { Eye } from "lucide-react";
 
 interface PayrollActionsProps {
   payroll: Payroll;
-  userRole: UserRole;
-  onEdit: (payroll: Payroll) => void;
-  onDelete: (payroll: Payroll) => void;
-  onViewPayroll: (payroll: Payroll) => void;
+  onView: (payroll: Payroll) => void;
 }
 
-const PayrollActions: React.FC<PayrollActionsProps> = ({
-  payroll,
-  userRole,
-  onEdit,
-  onDelete,
-  onViewPayroll,
-}) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger className="p-2 rounded-full hover:bg-secondary dark:hover:bg-gray-600">
-      <MoreVertical className="h-5 w-5 dark:text-gray-200" />
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end" className="dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700">
-      <DropdownMenuItem onClick={() => onViewPayroll(payroll)} className="dark:hover:bg-gray-700">
-        <FileText className="w-4 h-4 mr-2" /> View Details
-      </DropdownMenuItem>
-      {(userRole === "HR" || userRole === "Admin") && (
-        <DropdownMenuItem onClick={() => onEdit(payroll)} className="dark:hover:bg-gray-700">
-          <Edit className="w-4 h-4 mr-2" /> Edit
-        </DropdownMenuItem>
-      )}
-      {userRole === "Admin" && (
-        <DropdownMenuItem onClick={() => onDelete(payroll)} className="text-red-500 dark:text-red-400 dark:hover:bg-red-900">
-          <Trash className="w-4 h-4 mr-2" /> Delete
-        </DropdownMenuItem>
-      )}
-    </DropdownMenuContent>
-  </DropdownMenu>
+const PayrollActions: React.FC<PayrollActionsProps> = ({ payroll, onView }) => (
+  <Button
+    onClick={() => onView(payroll)}
+    className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white flex items-center gap-2"
+  >
+    <Eye className="h-4 w-4" /> View
+  </Button>
 );
 
 export default PayrollActions;
