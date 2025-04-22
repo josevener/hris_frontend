@@ -6,62 +6,57 @@ import {
   updatePayrollItem,
 } from "@/services/api/apiPayrollItem";
 import { fetchEmployees } from "@/services/api/apiEmployee";
-import { fetchPayrolls } from "@/services/api/apiPayroll";
+import { fetchPayrollCycles } from "@/services/api/apiPayrollCycle";
 import { toast } from "sonner";
-import { Payroll, PayrollItem, PaginatedResponse } from "@/types/payroll";
-import { Employee } from "@/types/salary"; // Assuming Employee is here; adjust if needed
+import { PayrollItem, PayrollCycle } from "@/types/payroll";
+import { Employee } from "@/types/salary";
 import { getCookie } from "@/lib/auth";
 
 export const usePayrollItemData = () => {
   const [payrollItems, setPayrollItems] = useState<PayrollItem[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [payrolls, setPayrolls] = useState<Payroll[]>([]);
+  const [payrollCycles, setPayrollCycles] = useState<PayrollCycle[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  // Fetch token asynchronously on mount
   useEffect(() => {
     const fetchToken = async () => {
-      const authToken = await getCookie("token");
+      const authToken = await getCookie("auth_token");
       setToken(authToken);
     };
     fetchToken();
   }, []);
 
-  // Load data only when token is available
   useEffect(() => {
     const loadData = async () => {
-      if (!token) return; // Wait for token
+      if (!token) return;
 
       try {
         setLoading(true);
         setError(null);
 
-        const [payrollItemData, employeeData, payrollData] = await Promise.all([
-          fetchPayrollItems(),
-          fetchEmployees(token),
-          fetchPayrolls(),
-        ]);
+        const [payrollItemData, employeeData, payrollCycleData] =
+          await Promise.all([
+            fetchPayrollItems(),
+            fetchEmployees(token),
+            fetchPayrollCycles(),
+          ]);
 
         console.log("Fetched payroll items:", payrollItemData);
         console.log("Fetched employees:", employeeData);
-        console.log("Fetched payrolls:", payrollData);
+        console.log("Fetched payroll cycles:", payrollCycleData);
 
         const enrichedPayrollItems = payrollItemData.map((item) => ({
           ...item,
           employee: Array.isArray(employeeData)
             ? employeeData.find((emp) => emp.id === item.employee_id)
             : undefined,
-          payroll:
-            payrollData.data && item.payroll_id
-              ? payrollData.data.find((p: Payroll) => p.id === item.payroll_id)
-              : undefined,
         }));
 
         setPayrollItems(enrichedPayrollItems);
         setEmployees(Array.isArray(employeeData) ? employeeData : []);
-        setPayrolls(payrollData.data || []);
+        setPayrollCycles(payrollCycleData.cycles || []);
       } catch (err: any) {
         setError(err.message || "Failed to fetch payroll item data.");
         toast.error(err.message || "Failed to fetch payroll item data.");
@@ -72,33 +67,37 @@ export const usePayrollItemData = () => {
     };
 
     loadData();
-  }, [token]); // Depend on token
+  }, [token]);
 
   const addPayrollItem = async (payrollItem: Partial<PayrollItem>) => {
     if (!token) throw new Error("No authentication token available");
     try {
-      const newPayrollItem = await createPayrollItem(payrollItem);
+      const payload = {
+        employee_id:
+          payrollItem.scope === "global" ? null : payrollItem.employee_id,
+        payroll_cycles_id: payrollItem.payroll_cycles_id,
+        scope: payrollItem.scope,
+        type: payrollItem.type,
+        category: payrollItem.category,
+        amount: payrollItem.amount,
+      };
+      const newPayrollItem = await createPayrollItem(payload);
       const updatedPayrollItems = await fetchPayrollItems();
       const employeeData = await fetchEmployees(token);
-      const payrollData: PaginatedResponse<Payroll> = await fetchPayrolls();
+      const payrollCycleData = await fetchPayrollCycles();
       const enrichedPayrollItems = updatedPayrollItems.map((item) => ({
         ...item,
         employee: Array.isArray(employeeData)
           ? employeeData.find((emp) => emp.id === item.employee_id)
           : undefined,
-        payroll:
-          payrollData.data && item.payroll_id
-            ? payrollData.data.find((p: Payroll) => p.id === item.payroll_id)
-            : undefined,
       }));
       setPayrollItems(enrichedPayrollItems);
       setEmployees(Array.isArray(employeeData) ? employeeData : []);
-      setPayrolls(payrollData.data || []);
+      setPayrollCycles(payrollCycleData.cycles || []);
       return newPayrollItem;
     } catch (err: any) {
       setError(err.message || "Failed to add payroll item.");
       toast.error(err.message || "Failed to add payroll item.");
-      console.error("Error adding payroll item:", err);
       throw err;
     }
   };
@@ -109,27 +108,31 @@ export const usePayrollItemData = () => {
   ) => {
     if (!token) throw new Error("No authentication token available");
     try {
-      await updatePayrollItem(id, payrollItem);
+      const payload = {
+        employee_id:
+          payrollItem.scope === "global" ? null : payrollItem.employee_id,
+        payroll_cycles_id: payrollItem.payroll_cycles_id,
+        scope: payrollItem.scope,
+        type: payrollItem.type,
+        category: payrollItem.category,
+        amount: payrollItem.amount,
+      };
+      await updatePayrollItem(id, payload);
       const updatedPayrollItems = await fetchPayrollItems();
       const employeeData = await fetchEmployees(token);
-      const payrollData: PaginatedResponse<Payroll> = await fetchPayrolls();
+      const payrollCycleData = await fetchPayrollCycles();
       const enrichedPayrollItems = updatedPayrollItems.map((item) => ({
         ...item,
         employee: Array.isArray(employeeData)
           ? employeeData.find((emp) => emp.id === item.employee_id)
           : undefined,
-        payroll:
-          payrollData.data && item.payroll_id
-            ? payrollData.data.find((p: Payroll) => p.id === item.payroll_id)
-            : undefined,
       }));
       setPayrollItems(enrichedPayrollItems);
       setEmployees(Array.isArray(employeeData) ? employeeData : []);
-      setPayrolls(payrollData.data || []);
+      setPayrollCycles(payrollCycleData.cycles || []);
     } catch (err: any) {
       setError(err.message || "Failed to edit payroll item.");
       toast.error(err.message || "Failed to edit payroll item.");
-      console.error("Error editing payroll item:", err);
       throw err;
     }
   };
@@ -140,24 +143,19 @@ export const usePayrollItemData = () => {
       await deletePayrollItem(id);
       const updatedPayrollItems = await fetchPayrollItems();
       const employeeData = await fetchEmployees(token);
-      const payrollData: PaginatedResponse<Payroll> = await fetchPayrolls();
+      const payrollCycleData = await fetchPayrollCycles();
       const enrichedPayrollItems = updatedPayrollItems.map((item) => ({
         ...item,
         employee: Array.isArray(employeeData)
           ? employeeData.find((emp) => emp.id === item.employee_id)
           : undefined,
-        payroll:
-          payrollData.data && item.payroll_id
-            ? payrollData.data.find((p: Payroll) => p.id === item.payroll_id)
-            : undefined,
       }));
       setPayrollItems(enrichedPayrollItems);
       setEmployees(Array.isArray(employeeData) ? employeeData : []);
-      setPayrolls(payrollData.data || []);
+      setPayrollCycles(payrollCycleData.cycles || []);
     } catch (err: any) {
       setError(err.message || "Failed to remove payroll item.");
       toast.error(err.message || "Failed to remove payroll item.");
-      console.error("Error removing payroll item:", err);
       throw err;
     }
   };
@@ -165,7 +163,7 @@ export const usePayrollItemData = () => {
   return {
     payrollItems,
     employees,
-    payrolls,
+    payrollCycles,
     loading,
     error,
     setPayrollItems,

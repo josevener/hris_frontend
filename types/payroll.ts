@@ -1,4 +1,5 @@
 import { Employee } from "@/types/employee";
+import { Payslip } from "./payslip";
 
 export interface Salary {
   id: number;
@@ -20,13 +21,15 @@ export interface Payroll {
   salary_id: number;
   payroll_cycles_id: number;
   status: "pending" | "processed" | "paid";
+  basic_salary?: number;
   total_earnings?: number;
   total_deductions?: number;
   net_salary?: number;
+  gross_salary?: number;
   created_at: string;
   updated_at: string;
-  employee?: Employee;
   salary?: Salary;
+  employee?: Employee;
   payroll_items?: PayrollItem[];
   payroll_cycle?: PayrollCycle;
 }
@@ -34,11 +37,12 @@ export interface Payroll {
 export interface PayrollItem {
   id: number;
   payroll_id?: number | null;
+  payroll_cycles_id?: number | null;
   employee_id?: number | null;
   scope: "specific" | "global";
   type: "earning" | "deduction" | "contribution";
   category: string;
-  amount: number;
+  amount: string;
   start_date?: string;
   end_date?: string;
   created_at: string;
@@ -47,18 +51,23 @@ export interface PayrollItem {
   payroll?: Payroll;
 }
 
+export interface GeneratePayslipsResponse {
+  payslips: Payslip[];
+  pdfUrls: string[];
+}
+
 export interface PayrollCycle {
   id: number;
-  start_date: string; // YYYY-MM-DD format
-  end_date: string; // YYYY-MM-DD format
-  pay_date: string; // YYYY-MM-DD format
+  start_date: string;
+  end_date: string;
+  pay_date: string;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface PayrollConfig {
   id: number;
-  start_year_month: string; // YYYY-MM
+  start_year_month: string;
   first_start_day: number;
   first_end_day: number;
   second_start_day: number;

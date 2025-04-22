@@ -1,8 +1,9 @@
+import PayslipList from "@/components/payslip_management/PayslipList";
 
-export default function PayslipsPage() {
+export default function PayslipPage() {
   return (
-    <div>
-      Payslips
+    <div className="container mx-auto p-6" suppressHydrationWarning>
+      <PayslipList />
     </div>
   );
 }

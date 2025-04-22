@@ -14,24 +14,23 @@ import { PayrollItem } from "@/types/payroll";
 import DeleteConfirmation from "./DeleteConfirmation";
 
 const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => {
-  const { payrollItems, employees, payrolls, loading, error, addPayrollItem, editPayrollItem, removePayrollItem } = usePayrollItemData();
+  const { payrollItems, employees, payrollCycles, loading, error, addPayrollItem, editPayrollItem, removePayrollItem } = usePayrollItemData();
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false); // New state for view modal
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedPayrollItem, setSelectedPayrollItem] = useState<PayrollItem | null>(null);
   const [newPayrollItem, setNewPayrollItem] = useState<Partial<PayrollItem>>({
     scope: "specific",
     employee_id: undefined,
-    start_date: "",
-    end_date: "",
+    payroll_cycles_id: undefined,
     type: "earning",
     category: "",
     amount: 0,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const validatePayrollItem = (item: Partial<PayrollItem>): boolean => {
     if (!item.scope) {
@@ -42,16 +41,8 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
       toast.error("Employee is required for specific scope.");
       return false;
     }
-    if (!item.start_date) {
-      toast.error("Start date is required.");
-      return false;
-    }
-    if (!item.end_date) {
-      toast.error("End date is required.");
-      return false;
-    }
-    if (item.start_date && item.end_date && new Date(item.start_date) > new Date(item.end_date)) {
-      toast.error("Start date must be before end date.");
+    if (!item.payroll_cycles_id) {
+      toast.error("Payroll period is required.");
       return false;
     }
     if (!item.type) {
@@ -78,8 +69,7 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
       setNewPayrollItem({
         scope: "specific",
         employee_id: undefined,
-        start_date: "",
-        end_date: "",
+        payroll_cycles_id: undefined,
         type: "earning",
         category: "",
         amount: 0,
@@ -98,8 +88,9 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
     setIsSaving(true);
     try {
       await editPayrollItem(selectedPayrollItem.id, selectedPayrollItem);
-      setIsEditModalOpen(false);
+      setIsDetailModalOpen(false);
       setSelectedPayrollItem(null);
+      setIsEditMode(false);
       toast.success("Payroll item updated successfully");
     } catch (err) {
       toast.error("Failed to update payroll item");
@@ -125,9 +116,14 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
     }
   };
 
-  const handleViewProfile = (payrollItem: PayrollItem) => {
+  const handleView = (payrollItem: PayrollItem) => {
     setSelectedPayrollItem(payrollItem);
-    setIsViewModalOpen(true);
+    setIsEditMode(false);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleEditToggle = () => {
+    setIsEditMode(true);
   };
 
   const filteredPayrollItems = useMemo(() => {
@@ -177,21 +173,23 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
         loading={loading}
         handleEdit={(item) => {
           setSelectedPayrollItem(item);
-          setIsEditModalOpen(true);
+          setIsEditMode(true);
+          setIsDetailModalOpen(true);
         }}
         handleDelete={(item) => {
           setSelectedPayrollItem(item);
           setIsDeleteModalOpen(true);
         }}
-        handleViewProfile={handleViewProfile}
+        handleView={handleView}
         userRole={userRole}
+        payrollCycles={payrollCycles} // Pass payrollCycles
       />
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <PayrollItemForm
           payrollItem={newPayrollItem}
           employees={employees}
-          payrolls={payrolls}
+          payrollCycles={payrollCycles}
           onChange={setNewPayrollItem}
           onSave={handleAddPayrollItem}
           onCancel={() => setIsAddModalOpen(false)}
@@ -199,32 +197,25 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
         />
       </Dialog>
 
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      <Dialog open={isDetailModalOpen} onOpenChange={(open) => {
+        setIsDetailModalOpen(open);
+        if (!open) {
+          setSelectedPayrollItem(null);
+          setIsEditMode(false);
+        }
+      }}>
         {selectedPayrollItem && (
           <PayrollItemForm
             payrollItem={selectedPayrollItem}
             employees={employees}
-            payrolls={payrolls}
+            payrollCycles={payrollCycles}
             onChange={(updatedItem) => setSelectedPayrollItem(updatedItem as PayrollItem)}
             onSave={handleUpdatePayrollItem}
-            onCancel={() => setIsEditModalOpen(false)}
+            onCancel={() => setIsDetailModalOpen(false)}
             isSaving={isSaving}
-            isEditMode
-          />
-        )}
-      </Dialog>
-
-      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        {selectedPayrollItem && (
-          <PayrollItemForm
-            payrollItem={selectedPayrollItem}
-            employees={employees}
-            payrolls={payrolls}
-            onChange={() => {}} // No-op for view mode
-            onSave={() => {}} // No-op for view mode
-            onCancel={() => setIsViewModalOpen(false)}
-            isSaving={false}
-            isViewMode
+            isEditMode={isEditMode}
+            isViewMode={!isEditMode}
+            onEditToggle={handleEditToggle}
           />
         )}
       </Dialog>

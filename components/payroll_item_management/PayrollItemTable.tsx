@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserRole } from "@/types/employee";
 import PayrollItemActions from "./PayrollItemActions";
-import { PayrollItem } from "@/types/payroll";
+import { PayrollItem, PayrollCycle } from "@/types/payroll";
 import { format } from "date-fns";
 
 interface PayrollItemTableProps {
@@ -10,8 +10,9 @@ interface PayrollItemTableProps {
   loading: boolean;
   handleEdit: (payrollItem: PayrollItem) => void;
   handleDelete: (payrollItem: PayrollItem) => void;
-  handleViewProfile: (payrollItem: PayrollItem) => void;
+  handleView: (payrollItem: PayrollItem) => void;
   userRole: UserRole;
+  payrollCycles: PayrollCycle[]; // Add payrollCycles prop
 }
 
 const PayrollItemTable: React.FC<PayrollItemTableProps> = ({
@@ -19,14 +20,14 @@ const PayrollItemTable: React.FC<PayrollItemTableProps> = ({
   loading,
   handleEdit,
   handleDelete,
-  handleViewProfile,
+  handleView,
   userRole,
+  payrollCycles,
 }) => {
   const getFullName = (payrollItem: PayrollItem): string => {
     const employee = payrollItem.employee;
     if (!employee || !employee.user) {
-      console.warn(`Missing employee or user data for payroll item ID ${payrollItem.id}. Employee ID: ${payrollItem.employee_id}`, payrollItem);
-      return `All Employees`;
+      return payrollItem.scope === "global" ? "All Employees" : `Employee #${payrollItem.employee_id || "Unknown"}`;
     }
     const { user } = employee;
     return `${user.firstname} ${user.middlename ? user.middlename[0] + "." : ""} ${user.lastname} ${user.extension || ""}`.trim();
@@ -39,8 +40,14 @@ const PayrollItemTable: React.FC<PayrollItemTableProps> = ({
   };
 
   const formatPeriod = (item: PayrollItem): string => {
+    if (item.payroll_cycles_id) {
+      const cycle = payrollCycles.find((c) => c.id === item.payroll_cycles_id);
+      if (cycle && cycle.start_date && cycle.end_date) {
+        return `${format(new Date(cycle.start_date), "MMM dd, yyyy")} - ${format(new Date(cycle.end_date), "MMM dd, yyyy")}`;
+      }
+    }
     if (item.start_date && item.end_date) {
-      return `${format(new Date(item.start_date), "MMM dd, yyyy")} to ${format(new Date(item.end_date), "MMM dd, yyyy")}`;
+      return `${format(new Date(item.start_date), "MMM dd, yyyy")} - ${format(new Date(item.end_date), "MMM dd, yyyy")}`;
     }
     return "Not Assigned";
   };
@@ -82,11 +89,8 @@ const PayrollItemTable: React.FC<PayrollItemTableProps> = ({
               <TableCell className="dark:text-gray-200">{formatCurrency(item.amount)}</TableCell>
               <TableCell className="text-center">
                 <PayrollItemActions
-                  payrollItem={item}
-                  userRole={userRole}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onViewProfile={handleViewProfile}
+                  payrollItem={item} // Pass single item, not array
+                  onView={handleView}
                 />
               </TableCell>
             </TableRow>

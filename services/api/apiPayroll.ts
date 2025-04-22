@@ -1,5 +1,10 @@
 import { getCookie } from "@/lib/auth";
-import { Payroll, PayrollItem } from "@/types/payroll";
+import {
+  GeneratePayslipsResponse,
+  Payroll,
+  PayrollItem,
+} from "@/types/payroll";
+import { Employee } from "@/types/employee";
 
 const BASE_URL = "http://127.0.0.1:8000/api";
 
@@ -51,21 +56,39 @@ export const fetchPayrollItemsByPayrollId = (payrollId?: number) =>
   );
 
 export const createPayroll = (data: Partial<Payroll>) =>
-  // apiFetch<Payroll>("/payroll", "POST", data);
   apiFetch<{ message: string; payroll: Payroll }>(
     "/payroll",
     "POST",
     data
-  ).then((response) => {
-    const payroll = response.payroll;
-    if (!payroll.id) {
-      console.warn("Backend returned a payroll without an ID:", payroll);
-    }
-    return response.payroll;
-  });
+  ).then((response) => response.payroll);
 
 export const updatePayroll = (id: number, data: Partial<Payroll>) =>
-  apiFetch<Payroll>(`/payroll/${id}`, "PUT", data);
+  apiFetch<{ message: string; payroll: Payroll }>(
+    "/payroll/" + id,
+    "PUT",
+    data
+  ).then((response) => response.payroll);
 
 export const deletePayroll = (id: number) =>
   apiFetch<void>(`/payroll/${id}`, "DELETE");
+
+export const generatePayslips = (payrollIds: number[]) =>
+  apiFetch<GeneratePayslipsResponse>("/payroll/generate-payslips", "POST", {
+    payroll_ids: payrollIds,
+  });
+
+export const previewPayroll = (employeeId: number, payrollCycleId: number) =>
+  apiFetch<{
+    basic_salary: number;
+    total_earnings: number;
+    total_deductions: number;
+    net_salary: number;
+    gross_salary: number;
+    payroll_items: PayrollItem[];
+  }>(
+    `/payroll/preview?employee_id=${employeeId}&payroll_cycles_id=${payrollCycleId}`,
+    "GET"
+  );
+
+export const fetchEmployeesWithSalaries = () =>
+  apiFetch<Employee[]>("/payroll/employees-with-salaries", "GET");

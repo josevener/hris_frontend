@@ -10,9 +10,9 @@ interface PayrollActionsProps {
 const PayrollActions: React.FC<PayrollActionsProps> = ({ payroll, onView }) => (
   <Button
     onClick={() => onView(payroll)}
-    className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white flex items-center gap-2"
+    className="w-[80px] dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white flex items-center"
   >
-    <Eye className="h-4 w-4" /> View
+    <Eye className="h-2 w-2" /> View
   </Button>
 );
 

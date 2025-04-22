@@ -22,7 +22,6 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   sortConfig,
   handleSort,
   handleViewProfile,
-  userRole,
   itemsPerPage,
 }) => {
   const SortIcon = ({ column }: { column: SortKey }) =>

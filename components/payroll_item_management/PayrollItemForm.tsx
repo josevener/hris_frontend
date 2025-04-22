@@ -3,32 +3,38 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Edit } from "lucide-react";
 import { Employee } from "@/types/employee";
-import { Payroll, PayrollItem } from "@/types/payroll";
+import { PayrollItem, PayrollCycle } from "@/types/payroll";
+import { format } from "date-fns";
 
 interface PayrollItemFormProps {
   payrollItem: Partial<PayrollItem>;
   employees: Employee[];
-  payrolls: Payroll[];
+  payrollCycles: PayrollCycle[];
   onChange: (updatedPayrollItem: Partial<PayrollItem>) => void;
   onSave: () => void;
   onCancel: () => void;
   isSaving: boolean;
   isEditMode?: boolean;
-  isViewMode?: boolean; // New prop for view-only mode
+  isViewMode?: boolean;
+  onEditToggle?: () => void;
 }
 
 const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
   payrollItem,
   employees,
+  payrollCycles,
   onChange,
   onSave,
   onCancel,
   isSaving,
   isEditMode = false,
   isViewMode = false,
+  onEditToggle,
 }) => {
+  const isReadOnly = !isEditMode && isViewMode;
+
   const getFullName = (employee: Employee): string => {
     const user = employee.user;
     return user
@@ -39,7 +45,65 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
   const currentEmployeeName = () => {
     if (payrollItem.employee) return getFullName(payrollItem.employee);
     const employee = employees.find((emp) => emp.id === payrollItem.employee_id);
-    return employee ? getFullName(employee) : `Employee #${payrollItem.employee_id || "Unknown"}`;
+    return employee ? getFullName(employee) : payrollItem.scope === "global" ? "All Employees" : `Employee #${payrollItem.employee_id || "Unknown"}`;
+  };
+
+  // Sort payroll cycles: non-past-due (end_date >= today) first, then past cycles
+  const sortedPayrollCycles = [...payrollCycles].sort((a, b) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const aEndDate = new Date(a.end_date);
+    const bEndDate = new Date(b.end_date);
+    const aIsActive = aEndDate >= today;
+    const bIsActive = bEndDate >= today;
+
+    if (aIsActive && !bIsActive) return -1;
+    if (!aIsActive && bIsActive) return 1;
+
+    return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+  });
+
+  const formatPayrollPeriod = (cycle: PayrollCycle, isPast: boolean = false): string => {
+    if (!cycle.start_date || !cycle.end_date) {
+      return "Invalid Period";
+    }
+    const start = format(new Date(cycle.start_date), "MMM dd, yyyy");
+    const end = format(new Date(cycle.end_date), "MMM dd, yyyy");
+    return `${start} - ${end}${isPast ? " (Past)" : ""}`;
+  };
+
+  const getPayrollPeriodDisplay = () => {
+    if (payrollItem.payroll_cycles_id) {
+      const cycle = payrollCycles.find((c) => c.id === payrollItem.payroll_cycles_id);
+      if (cycle) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const isPast = new Date(cycle.end_date) < today;
+        return formatPayrollPeriod(cycle, isPast);
+      }
+    }
+    if (payrollItem.start_date && payrollItem.end_date) {
+      return `${format(new Date(payrollItem.start_date), "MMM dd, yyyy")} - ${format(new Date(payrollItem.end_date), "MMM dd, yyyy")}`;
+    }
+    return "Not Assigned";
+  };
+
+  const currentPayrollCycleValue = payrollItem.payroll_cycles_id
+    ? payrollItem.payroll_cycles_id.toString()
+    : payrollCycles.find((cycle) =>
+        cycle.start_date === payrollItem.start_date && cycle.end_date === payrollItem.end_date
+      )?.id.toString() || "";
+
+  const handlePayrollCycleChange = (value: string) => {
+    const selectedCycle = payrollCycles.find((c) => c.id.toString() === value);
+    if (selectedCycle) {
+      onChange({
+        ...payrollItem,
+        payroll_cycles_id: selectedCycle.id,
+        start_date: selectedCycle.start_date,
+        end_date: selectedCycle.end_date,
+      });
+    }
   };
 
   return (
@@ -53,7 +117,7 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
         {/* Scope */}
         <div className="flex flex-col gap-1">
           <Label htmlFor="scope" className="text-sm font-medium">Scope *</Label>
-          {isViewMode ? (
+          {isReadOnly ? (
             <Input value={payrollItem.scope || ""} readOnly className="w-full" />
           ) : (
             <Select
@@ -65,7 +129,6 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
                 })
               }
               value={payrollItem.scope || ""}
-              disabled={isEditMode}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select scope" />
@@ -78,20 +141,19 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
           )}
         </div>
 
-        {/* Employee Select (only if scope is specific) */}
+        {/* Employee Select */}
         {payrollItem.scope === "specific" && (
           <div className="flex flex-col gap-1">
             <Label htmlFor="employee" className="text-sm font-medium">Employee *</Label>
-            {isViewMode ? (
+            {isReadOnly ? (
               <Input value={currentEmployeeName()} readOnly className="w-full" />
             ) : (
               <Select
                 onValueChange={(value) => onChange({ ...payrollItem, employee_id: Number(value) })}
                 value={payrollItem.employee_id ? payrollItem.employee_id.toString() : ""}
-                disabled={isEditMode}
               >
                 <SelectTrigger className="w-full">
-                  {isEditMode ? <span>{currentEmployeeName()}</span> : <SelectValue placeholder="Choose an employee" />}
+                  <SelectValue placeholder="Choose an employee" />
                 </SelectTrigger>
                 <SelectContent>
                   {employees.length > 0 ? (
@@ -109,49 +171,54 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
           </div>
         )}
 
-        {/* Start and End Date on One Line */}
+        {/* Payroll Period Select */}
         <div className="flex flex-col gap-1">
-          <Label className="text-sm font-medium">Payroll Period *</Label>
-          <div className="flex flex-row gap-2">
-            <div className="flex-1">
-              <Label htmlFor="start_date" className="sr-only">Start Date</Label>
-              <Input
-                id="start_date"
-                type="date"
-                placeholder="Start Date"
-                value={payrollItem.start_date || ""}
-                onChange={(e) => onChange({ ...payrollItem, start_date: e.target.value })}
-                className="w-full"
-                disabled={isEditMode || isViewMode}
-                readOnly={isViewMode}
-              />
-            </div>
-            <div className="flex items-center">
-              <span className="text-gray-500 dark:text-gray-400">to</span>
-            </div>
-            <div className="flex-1">
-              <Label htmlFor="end_date" className="sr-only">End Date</Label>
-              <Input
-                id="end_date"
-                type="date"
-                placeholder="End Date"
-                value={payrollItem.end_date || ""}
-                onChange={(e) => onChange({ ...payrollItem, end_date: e.target.value })}
-                className="w-full"
-                disabled={isEditMode || isViewMode}
-                readOnly={isViewMode}
-              />
-            </div>
-          </div>
+          <Label htmlFor="payroll_period" className="text-sm font-medium">Payroll Period *</Label>
+          {isReadOnly ? (
+            <Input value={getPayrollPeriodDisplay()} readOnly className="w-full" />
+          ) : (
+            <Select
+              onValueChange={handlePayrollCycleChange}
+              value={currentPayrollCycleValue}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select payroll period" />
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                side="bottom"
+                className="max-h-60 overflow-y-auto"
+              >
+                {sortedPayrollCycles.length > 0 ? (
+                  sortedPayrollCycles.map((cycle) => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const isPast = new Date(cycle.end_date) < today;
+                    return (
+                      <SelectItem
+                        key={cycle.id}
+                        value={cycle.id.toString()}
+                        className={isPast ? "text-gray-500 dark:text-gray-400" : ""}
+                      >
+                        {formatPayrollPeriod(cycle, isPast)}
+                      </SelectItem>
+                    );
+                  })
+                ) : (
+                  <SelectItem value="none" disabled>No payroll cycles available</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
-        {/* Type and Category on One Line */}
+        {/* Type and Category */}
         <div className="flex flex-col gap-1">
           <Label className="text-sm font-medium">Details *</Label>
           <div className="flex flex-row gap-2">
             <div className="flex-1">
               <Label htmlFor="type" className="sr-only">Type</Label>
-              {isViewMode ? (
+              {isReadOnly ? (
                 <Input value={payrollItem.type || ""} readOnly className="w-full" />
               ) : (
                 <Select
@@ -177,7 +244,7 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
                 value={payrollItem.category || ""}
                 onChange={(e) => onChange({ ...payrollItem, category: e.target.value })}
                 className="w-full"
-                readOnly={isViewMode}
+                readOnly={isReadOnly}
               />
             </div>
           </div>
@@ -194,12 +261,21 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
             className="w-full"
             min="0"
             step="0.01"
-            readOnly={isViewMode}
+            readOnly={isReadOnly}
           />
         </div>
       </div>
 
       <DialogFooter className="flex justify-end gap-2">
+        {isViewMode && onEditToggle && (
+          <Button
+            variant="outline"
+            onClick={onEditToggle}
+            className="px-4 py-2 text-sm bg-primary text-white flex items-center hover:bg-gray-800 hover:text-white"
+          >
+            <Edit className="mr-2 h-4 w-4" /> Edit
+          </Button>
+        )}
         <Button variant="outline" onClick={onCancel} className="px-4 py-2 text-sm">
           {isViewMode ? "Close" : "Cancel"}
         </Button>

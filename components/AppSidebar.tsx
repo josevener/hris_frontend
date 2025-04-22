@@ -20,7 +20,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { User, Team, NavItem } from "@/types/sidebar"; // Import shared types
+import { User, Team, NavItem } from "@/types/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
