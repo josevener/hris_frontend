@@ -3,13 +3,13 @@
 import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Toaster, toast } from "sonner";
-import { Payslip, PayslipSortKey } from "@/types/payslip";
+import { Toaster } from "sonner";
+import { PayslipSortKey } from "@/types/payslip";
 import { usePayslipData } from "@/hooks/usePayslipData";
 import { PayslipTable } from "./PayslipTable";
 import { UserRole } from "@/types/employee";
 
-const PayslipList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => {
+const PayslipList: React.FC<{ userRole?: UserRole }> = () => {
   const { payslips, loading: dataLoading, error } = usePayslipData();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{ key: PayslipSortKey; direction: "asc" | "desc" } | null>(null);

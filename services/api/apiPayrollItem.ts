@@ -38,7 +38,7 @@ export const fetchPayrollItemsForActiveConfig = async () => {
 };
 
 // Fetch all payroll items
-export const fetchPayrollItems = (payroll_cycles_id: number, token: string) =>
+export const fetchPayrollItems = () =>
   apiFetch<PayrollItem[]>("/payroll-items", "GET");
 
 // Fetch a single payroll item by ID

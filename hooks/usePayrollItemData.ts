@@ -9,7 +9,7 @@ import { fetchEmployees } from "@/services/api/apiEmployee";
 import { fetchPayrollCycles } from "@/services/api/apiPayrollCycle";
 import { toast } from "sonner";
 import { PayrollItem, PayrollCycle } from "@/types/payroll";
-import { Employee } from "@/types/salary";
+import { Employee } from "@/types/employee"; // Updated import
 import { getCookie } from "@/lib/auth";
 
 export const usePayrollItemData = () => {

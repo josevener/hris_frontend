@@ -256,8 +256,8 @@ const PayrollItemForm: React.FC<PayrollItemFormProps> = ({
           <Input
             id="amount"
             type="number"
-            value={payrollItem.amount || ""}
-            onChange={(e) => onChange({ ...payrollItem, amount: parseFloat(e.target.value) || 0 })}
+            value={payrollItem.amount?.toString() || ""}
+            onChange={(e) => onChange({ ...payrollItem, amount: e.target.value })}
             className="w-full"
             min="0"
             step="0.01"

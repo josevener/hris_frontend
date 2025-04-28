@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import api from "./axios";
-import { useRouter } from "next/navigation";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const AuthContext = createContext<any>(null);
 
 export function AuthProvider({
@@ -13,12 +13,14 @@ export function AuthProvider({
 }: {
   children: React.ReactNode;
   initialToken: string | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialUser: any | null;
 }) {
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(initialUser);
   const [token, setToken] = useState<string | null>(initialToken);
   const [loading, setLoading] = useState(!initialToken || !initialUser);
-  const router = useRouter();
 
   useEffect(() => {
     console.log("AuthContext - Initial token:", initialToken, "Initial user:", initialUser);
@@ -45,13 +47,7 @@ export function AuthProvider({
     syncAuth();
   }, [initialToken, initialUser]); // Depend on initial props
 
-  // // Separate useEffect for navigation
-  // useEffect(() => {
-  //   if (!loading && initialToken && initialUser) {
-  //     router.push('/'); // Navigate after loading is false
-  //   }
-  // }, [loading, initialToken, initialUser, router]);
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const login = async (newToken: string, newUser: any) => {
     console.log("Login - Token:", newToken, "User:", newUser);
     setToken(newToken);

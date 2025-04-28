@@ -1,20 +1,23 @@
 import { Attendance } from "@/types/attendance";
+import { getCookie } from "@/lib/auth";
 
 const BASE_URL = "http://127.0.0.1:8000/api";
-
-const getAuthToken = () =>
-  localStorage.getItem("auth_token") || "your-sanctum-token-here";
 
 const apiFetch = async <T>(
   endpoint: string,
   method: string,
   body?: any
 ): Promise<T> => {
+  const token = await getCookie("auth_token");
+  if (!token) {
+    throw new Error("No auth token found");
+  }
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${getAuthToken()}`,
+      Authorization: `Bearer ${token}`,
       Accept: "application/json",
     },
     body: body ? JSON.stringify(body) : undefined,

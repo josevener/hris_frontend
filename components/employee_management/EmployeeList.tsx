@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { Sheet } from "@/components/ui/sheet";
 import { Toaster, toast } from "sonner";
 import { Plus } from "lucide-react";
 import EmployeeForm from "./EmployeeForm";
@@ -22,18 +23,27 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
   const [roleFilter, setRoleFilter] = useState<string>("All");
   const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: "asc" | "desc" } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isViewModalOpen, setIsViewModalOpen] = useState(false); // Renamed from isEditModalOpen
+  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
+  const [isViewSheetOpen, setIsViewSheetOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isEditable, setIsEditable] = useState(false);
   const [newEmployee, setNewEmployee] = useState<Partial<Employee>>({
     birthdate: null,
-    reports_to: null,
     gender: null,
+    address: "",
     user_id: 0,
     department_id: 0,
     designation_id: 0,
+    joining_date: null,
+    contract_type: null,
+    sss_id: "",
+    philhealth_id: "",
+    pagibig_id: "",
+    tin: "",
+    tax: "",
+    dependents: [],
+    education_background: [],
     company_id_number: "",
   });
   const [isAdding, setIsAdding] = useState(false);
@@ -65,7 +75,10 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       if (!validateEmployee(newEmployee)) return;
 
       const companyIdNumber = users.find((u) => u.id === newEmployee.user_id)?.company_id_number || "";
-      const payload = { ...newEmployee, company_id_number: companyIdNumber };
+      const payload = {
+        ...newEmployee,
+        company_id_number: companyIdNumber,
+      };
       console.log("Payload sent to createEmployee:", payload);
 
       const addedEmployee = await createEmployee(payload, token);
@@ -91,18 +104,28 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
         return newEmployees;
       });
       setUsers((prev) => prev.filter((u) => u.id !== newEmployee.user_id));
-      setIsAddModalOpen(false);
+      setIsAddSheetOpen(false);
       setNewEmployee({
         birthdate: null,
-        reports_to: null,
         gender: null,
+        address: "",
         user_id: 0,
         department_id: 0,
         designation_id: 0,
+        joining_date: null,
+        contract_type: null,
+        sss_id: "",
+        philhealth_id: "",
+        pagibig_id: "",
+        tin: "",
+        tax: "",
+        dependents: [],
+        education_background: [],
         company_id_number: "",
       });
       toast.success("Employee added successfully");
       if (userRole === "Employee") toast.info("Your profile has been submitted for review");
+    
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.errors?.company_id_number?.[0] ||
@@ -125,11 +148,20 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       const payload = {
         company_id_number: selectedEmployee.company_id_number,
         birthdate: selectedEmployee.birthdate || null,
-        reports_to: selectedEmployee.reports_to === "N/A" ? null : selectedEmployee.reports_to,
         gender: selectedEmployee.gender === "N/A" ? null : selectedEmployee.gender,
+        address: selectedEmployee.address || "",
         user_id: selectedEmployee.user_id,
         department_id: selectedEmployee.department_id,
         designation_id: selectedEmployee.designation_id,
+        joining_date: selectedEmployee.joining_date || null,
+        contract_type: selectedEmployee.contract_type || null,
+        sss_id: selectedEmployee.sss_id || "",
+        philhealth_id: selectedEmployee.philhealth_id || "",
+        pagibig_id: selectedEmployee.pagibig_id || "",
+        tin: selectedEmployee.tin || "",
+        tax: selectedEmployee.tax || "",
+        dependents: selectedEmployee.dependents || [],
+        education_background: selectedEmployee.education_background || [],
       };
 
       await updateEmployee(selectedEmployee.id, payload, token);
@@ -137,11 +169,12 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       const employees = await fetchEmployees(token);
       setEmployees(employees);
 
-      setIsViewModalOpen(false);
+      setIsViewSheetOpen(false);
       setSelectedEmployee(null);
       setIsEditable(false);
       toast.success("Employee updated successfully");
       if (userRole === "Employee") toast.info("Your profile has been updated");
+
     } catch (err: any) {
       toast.error(err.message || "Failed to update employee");
       console.error("Update error:", err);
@@ -161,6 +194,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       setIsDeleteModalOpen(false);
       setSelectedEmployee(null);
       toast.success("Employee deleted successfully");
+
     } catch (err: any) {
       toast.error(err.message || "Failed to delete employee");
       console.error("Delete error:", err);
@@ -171,7 +205,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
 
   const handleViewProfile = (employee: Employee) => {
     setSelectedEmployee(employee);
-    setIsViewModalOpen(true);
+    setIsViewSheetOpen(true);
     setIsEditable(false); // Start in view-only mode
   };
 
@@ -261,7 +295,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
             </SelectContent>
           </Select>
           {(userRole === "HR" || userRole === "Admin") && (
-            <Button onClick={() => setIsAddModalOpen(true)} className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-foreground">
+            <Button onClick={() => setIsAddSheetOpen(true)} className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-foreground">
               <Plus className="mr-2 h-4 w-4" /> Add Employee
             </Button>
           )}
@@ -302,7 +336,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
         </div>
       )}
 
-      <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+      <Sheet open={isAddSheetOpen} onOpenChange={setIsAddSheetOpen}>
         <EmployeeForm
           employee={newEmployee}
           users={users}
@@ -310,16 +344,16 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
           designations={designations}
           onChange={setNewEmployee}
           onSave={handleAddEmployee}
-          onCancel={() => setIsAddModalOpen(false)}
+          onCancel={() => setIsAddSheetOpen(false)}
           isSaving={isAdding}
           userRole={userRole}
         />
-      </Dialog>
+      </Sheet>
 
-      <Dialog
-        open={isViewModalOpen}
+      <Sheet
+        open={isViewSheetOpen}
         onOpenChange={(open) => {
-          setIsViewModalOpen(open);
+          setIsViewSheetOpen(open);
           if (!open) {
             setIsEditable(false);
             setSelectedEmployee(null);
@@ -334,7 +368,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
             designations={designations}
             onChange={handleEmployeeChange}
             onSave={handleUpdateEmployee}
-            onCancel={() => setIsViewModalOpen(false)}
+            onCancel={() => setIsViewSheetOpen(false)}
             isSaving={isUpdating}
             userRole={userRole}
             isEditMode
@@ -342,7 +376,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
             setIsEditable={setIsEditable}
           />
         )}
-      </Dialog>
+      </Sheet>
 
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DeleteConfirmation

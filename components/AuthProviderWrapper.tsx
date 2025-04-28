@@ -12,7 +12,6 @@ export default function AuthProviderWrapper({
 }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User[] | null>(null);
-  const [setLoading] = useState(true);
 
   useEffect(() => {
     const fetchAuthData = async () => {

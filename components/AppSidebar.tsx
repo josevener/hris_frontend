@@ -73,11 +73,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           ],
         },
         {
-          title: "Settings",
+          title: "Settings & Configuration",
           url: "/settings",
           icon: Settings2,
           items: [
             { title: "General", url: "/settings/general" },
+            { title: "Shift Schedule", url: "/settings/shift-schedule" },
             { title: "Payroll Configuration", url: "/settings/payroll/configuration" },
             { title: "Account", url: "/settings/account" },
             { title: "Security & Privacy", url: "/settings/security" },

@@ -41,6 +41,31 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
     return "N/A"; // Return "N/A" for undefined, null, or other types
   };
 
+  const getStatusRemarks = (attendance: Attendance): string => {
+    const STANDARD_HOURS = 8; // Standard work hours per day
+    const EXPECTED_CLOCK_IN = "08:00:00"; // Expected clock-in time (9:00 AM)
+
+    const remarks: string[] = [];
+
+    // Check if Late (clock_in after 9:00 AM)
+    if (attendance.clock_in && attendance.clock_in > EXPECTED_CLOCK_IN) {
+      remarks.push("Late");
+    }
+
+    // Check for Undertime or Overtime based on worked_hours
+    const workedHours = typeof attendance.worked_hours === "number" ? attendance.worked_hours : parseFloat(String(attendance.worked_hours || 0));
+    if (!isNaN(workedHours)) {
+      if (workedHours < STANDARD_HOURS) {
+        remarks.push("Undertime");
+      } else if (workedHours > STANDARD_HOURS) {
+        remarks.push("OT");
+      }
+    }
+
+    // If no remarks, return "On Time"
+    return remarks.length > 0 ? remarks.join(", ") : "On Time";
+  };
+
   return (
     <Table className="w-full max-w-6xl bg-white dark:bg-gray-800 dark:border-gray-700">
       <TableHeader>
@@ -51,6 +76,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           <TableHead className="dark:text-gray-200">Clock In</TableHead>
           <TableHead className="dark:text-gray-200">Clock Out</TableHead>
           <TableHead className="dark:text-gray-200">Rendered Hours</TableHead>
+          <TableHead className="dark:text-gray-200">Status/Remarks</TableHead>
           <TableHead className="w-[150px] text-center dark:text-gray-200">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -61,6 +87,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
               <TableCell><Skeleton className="h-4 w-8 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-32 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-16 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-16 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-16 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-16 dark:bg-gray-600" /></TableCell>
@@ -78,6 +105,9 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
               <TableCell className="dark:text-gray-200">
                 {formatWorkedHours(attendance.worked_hours)}
               </TableCell>
+              <TableCell className="dark:text-gray-200">
+                {getStatusRemarks(attendance)}
+              </TableCell>
               <TableCell className="text-center">
                 <AttendanceActions
                   attendance={attendance}
@@ -90,7 +120,7 @@ const AttendanceTable: React.FC<AttendanceTableProps> = ({
           ))
         ) : (
           <TableRow className="dark:bg-gray-800">
-            <TableCell colSpan={7} className="text-center dark:text-gray-300">
+            <TableCell colSpan={8} className="text-center dark:text-gray-300">
               No attendance records available
             </TableCell>
           </TableRow>

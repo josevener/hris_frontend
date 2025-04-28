@@ -32,14 +32,13 @@ const UserForm: React.FC<UserFormProps> = ({
   onCancel,
   isSaving,
   isEditMode = false,
-  userRole,
   originalEmail,
   isEditable = false, // Default to false if not provided
   setIsEditable,
 }) => {
   const [emailError, setEmailError] = useState<string | null>(null);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
-  const [loadingAction, setLoadingAction] = useState(false);
+  const [, setLoadingAction] = useState(false);
 
   const validateEmailFormat = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

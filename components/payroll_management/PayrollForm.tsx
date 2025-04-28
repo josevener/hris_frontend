@@ -51,6 +51,7 @@ const formatCurrency = (value: number | undefined | null): string => {
   });
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const debounce = <F extends (...args: any[]) => any>(func: F, wait: number) => {
   let timeout: NodeJS.Timeout;
   return (...args: Parameters<F>): Promise<ReturnType<F>> => {
@@ -171,6 +172,8 @@ const PayrollForm: React.FC<PayrollFormProps> = ({
       try {
         const fetchedEmployees = await fetchEmployeesWithSalaries();
         setEmployeesWithSalaries(fetchedEmployees);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (error: any) {
         setErrorDialog({
           open: true,
@@ -200,6 +203,8 @@ const PayrollForm: React.FC<PayrollFormProps> = ({
             payroll_items: data.payroll_items,
           });
           lastFetched.current = { employee_id: employeeId, payroll_cycles_id: payrollCycleId };
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
           console.error("Preview Error:", error);
           setErrorDialog({
@@ -445,7 +450,7 @@ const PayrollForm: React.FC<PayrollFormProps> = ({
                       items.map((item) => (
                         <div key={item.id || `${item.category}-${item.amount}`} className="flex text-sm py-1 border-b last:border-none">
                           <div className="w-1/2">{item.category || "Unnamed"}</div>
-                          <div className="w-1/2 text-right">{formatCurrency(item.amount)}</div>
+                          <div className="w-1/2 text-right">{formatCurrency(Number(item.amount))}</div>
                         </div>
                       ))
                     ) : (

@@ -93,6 +93,8 @@ const PayrollList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) 
           response.message || `${skippedCount} payroll(s) were skipped (e.g., already paid, duplicates, or invalid data).`
         );
       }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       setSelectedPayrollIds([]);
       const errorMessage = err.message || "Failed to generate payslips.";
@@ -116,6 +118,8 @@ const PayrollList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) 
       setPayrolls((prev) => prev.filter((p) => !selectedPayrollIds.includes(p.id ?? 0)));
       setSelectedPayrollIds([]);
       toast.success(`Successfully deleted ${selectedPayrollIds.length} payroll records.`);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to delete selected payrolls");
     } finally {
@@ -181,6 +185,8 @@ const PayrollList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) 
       setIsAddModalOpen(false);
       setNewPayroll({ employee_id: 0, payroll_cycles_id: 0, status: "pending" });
       toast.success("Payroll added successfully");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to add payroll");
     } finally {
@@ -220,6 +226,8 @@ const PayrollList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) 
       setSelectedPayroll(null);
       setIsEditable(false);
       toast.success("Payroll updated successfully");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to update payroll");
     } finally {

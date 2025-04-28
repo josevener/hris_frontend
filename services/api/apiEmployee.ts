@@ -5,19 +5,25 @@ const BASE_URL = "http://127.0.0.1:8000/api";
 const apiFetch = async <T>(
   endpoint: string,
   method: string,
-  token: string | null, // Token from useAuth
-  body?: any
+  token: string | null,
+  body?: any,
+  isMultipart: boolean = false
 ): Promise<T> => {
+  const headers: HeadersInit = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    Accept: "application/json",
+  };
+
+  if (!isMultipart) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}), // Only add if token exists
-      Accept: "application/json",
-    },
-    body: body ? JSON.stringify(body) : undefined,
+    headers,
+    body: isMultipart ? body : body ? JSON.stringify(body) : undefined,
     cache: "no-store",
-    credentials: "include", // Match your axios withCredentials: true
+    credentials: "include",
   });
 
   if (!response.ok) {
@@ -51,28 +57,77 @@ export const createEmployee = async (
   data: Partial<Employee>,
   token: string | null
 ): Promise<Employee> => {
-  const response = await apiFetch<any>("/employees", "POST", token, data);
-  console.log("Raw API response from createEmployee:", response);
+  const formData = new FormData();
 
+  // Append non-file fields
+  for (const [key, value] of Object.entries(data)) {
+    if (
+      key === "dependents" ||
+      key === "education_background" ||
+      key === "documents"
+    ) {
+      formData.append(key, JSON.stringify(value));
+    } else if (value !== undefined && value !== null) {
+      formData.append(key, value.toString());
+    }
+  }
+
+  // Append document files
+  if (data.documents && Array.isArray(data.documents)) {
+    data.documents.forEach((doc, index) => {
+      if (doc.file instanceof File) {
+        formData.append(`documents[${index}][file]`, doc.file);
+        formData.append(`documents[${index}][type]`, doc.type);
+      }
+    });
+  }
+
+  const response = await apiFetch<any>(
+    "/employees",
+    "POST",
+    token,
+    formData,
+    true
+  );
   if (!response.employee) {
     throw new Error("Invalid server response: 'employee' object missing");
   }
 
-  const employeeData = response.employee;
-  console.log("Extracted employee data:", employeeData);
-
-  if (!employeeData.id) {
-    throw new Error("Employee ID missing in employee data");
-  }
-
-  return employeeData;
+  return response.employee;
 };
 
-export const updateEmployee = (
+export const updateEmployee = async (
   id: number,
   data: Partial<Employee>,
   token: string | null
-) => apiFetch<Employee>(`/employees/${id}`, "PUT", token, data);
+): Promise<Employee> => {
+  const formData = new FormData();
+
+  // Append non-file fields
+  for (const [key, value] of Object.entries(data)) {
+    if (
+      key === "dependents" ||
+      key === "education_background" ||
+      key === "documents"
+    ) {
+      formData.append(key, JSON.stringify(value));
+    } else if (value !== undefined && value !== null) {
+      formData.append(key, value.toString());
+    }
+  }
+
+  // Append document files
+  if (data.documents && Array.isArray(data.documents)) {
+    data.documents.forEach((doc, index) => {
+      if (doc.file instanceof File) {
+        formData.append(`documents[${index}][file]`, doc.file);
+        formData.append(`documents[${index}][type]`, doc.type);
+      }
+    });
+  }
+
+  return apiFetch<Employee>(`/employees/${id}`, "PUT", token, formData, true);
+};
 
 export const deleteEmployee = (id: number, token: string | null) =>
   apiFetch<void>(`/employees/${id}`, "DELETE", token);

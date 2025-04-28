@@ -18,10 +18,7 @@ interface PayrollItemTableProps {
 const PayrollItemTable: React.FC<PayrollItemTableProps> = ({
   payrollItems,
   loading,
-  handleEdit,
-  handleDelete,
   handleView,
-  userRole,
   payrollCycles,
 }) => {
   const getFullName = (payrollItem: PayrollItem): string => {
@@ -35,7 +32,7 @@ const PayrollItemTable: React.FC<PayrollItemTableProps> = ({
 
   const formatCurrency = (value: number | undefined): string => {
     return value !== undefined
-      ? value.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 })
+      ? value.toLocaleString("en-US", { style: "currency", currency: "PHP", maximumFractionDigits: 2 })
       : "N/A";
   };
 
@@ -86,7 +83,7 @@ const PayrollItemTable: React.FC<PayrollItemTableProps> = ({
               <TableCell className="dark:text-gray-200">{getFullName(item)}</TableCell>
               <TableCell className="dark:text-gray-200">{item.type}</TableCell>
               <TableCell className="dark:text-gray-200">{item.category}</TableCell>
-              <TableCell className="dark:text-gray-200">{formatCurrency(item.amount)}</TableCell>
+              <TableCell className="dark:text-gray-200">{formatCurrency(Number(item.amount))}</TableCell>
               <TableCell className="text-center">
                 <PayrollItemActions
                   payrollItem={item} // Pass single item, not array

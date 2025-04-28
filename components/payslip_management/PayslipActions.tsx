@@ -8,11 +8,11 @@ interface PayslipActionsProps {
 }
 
 const PayslipActions: React.FC<PayslipActionsProps> = ({ payslip }) => {
-  const viewUrl = `/payroll/payslips/view/${payslip.id}`;
+  const viewUrl = `/view/${payslip.id}`;
   console.log("PayslipActions: Navigating to", viewUrl);
 
   return (
-    <Link href={viewUrl}>
+    <Link href={viewUrl} target="_blank">
       <Button
         className="dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white flex items-center gap-2"
       >

@@ -21,6 +21,11 @@ export interface Payslip {
     id: number;
     company_id_number: string;
     address?: string | null;
+    sss_id?: string | null;
+    philhealth_id?: string | null;
+    pagibig_id?: string | null;
+    tin?: string | null;
+    tax?: string | null;
     user?: {
       firstname: string;
       middlename?: string | null;

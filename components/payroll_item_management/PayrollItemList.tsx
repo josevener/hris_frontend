@@ -26,7 +26,7 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
     payroll_cycles_id: undefined,
     type: "earning",
     category: "",
-    amount: 0,
+    amount: "0",
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -53,7 +53,7 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
       toast.error("Category is required.");
       return false;
     }
-    if (!item.amount || item.amount < 0) {
+    if (!item.amount || Number(item.amount) < 0) {
       toast.error("Amount must be non-negative.");
       return false;
     }
@@ -72,7 +72,7 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
         payroll_cycles_id: undefined,
         type: "earning",
         category: "",
-        amount: 0,
+        amount: "0",
       });
       toast.success("Payroll item added successfully");
     } catch (err) {
@@ -158,6 +158,11 @@ const PayrollItemList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          {(userRole === "HR" || userRole === "Admin") && (
+            <Button onClick={() => setIsAddModalOpen(true)}>
+              Generate Payroll Item
+            </Button>
+          )}
           {(userRole === "HR" || userRole === "Admin") && (
             <Button onClick={() => setIsAddModalOpen(true)}>
               <Plus className="mr-2 h-4 w-4" /> Add Payroll Item

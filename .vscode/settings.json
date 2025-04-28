@@ -3,6 +3,8 @@
   "editor.formatOnPaste": true,
   "editor.formatOnSave": true,
   "cSpell.words": [
+    "bdfcorp",
+    "BFDE",
     "dasboard",
     "desig",
     "doesnt",
@@ -10,7 +12,9 @@
     "HRIS",
     "lastname",
     "middlename",
+    "Restday",
     "shadcn",
-    "sonner"
+    "sonner",
+    "Unmark"
   ]
 }
