@@ -1,3 +1,4 @@
+// apiEmployee.ts
 import { Employee, User, Department, Designation } from "../../types/employee";
 
 const BASE_URL = "http://127.0.0.1:8000/api";
@@ -57,42 +58,55 @@ export const createEmployee = async (
   data: Partial<Employee>,
   token: string | null
 ): Promise<Employee> => {
-  const formData = new FormData();
+  // Normalize array fields to ensure they are arrays
+  const normalizedData = {
+    ...data,
+    dependents:
+      data.dependents !== undefined
+        ? Array.isArray(data.dependents)
+          ? data.dependents
+          : data.dependents
+            ? [data.dependents]
+            : []
+        : [],
+    education_background:
+      data.education_background !== undefined
+        ? Array.isArray(data.education_background)
+          ? data.education_background
+          : data.education_background
+            ? [data.education_background]
+            : []
+        : [],
+    documents:
+      data.documents !== undefined
+        ? Array.isArray(data.documents)
+          ? data.documents
+          : data.documents
+            ? [data.documents]
+            : []
+        : [],
+  };
 
-  // Append non-file fields
-  for (const [key, value] of Object.entries(data)) {
-    if (
-      key === "dependents" ||
-      key === "education_background" ||
-      key === "documents"
-    ) {
-      formData.append(key, JSON.stringify(value));
-    } else if (value !== undefined && value !== null) {
-      formData.append(key, value.toString());
-    }
-  }
-
-  // Append document files
-  if (data.documents && Array.isArray(data.documents)) {
-    data.documents.forEach((doc, index) => {
-      if (doc.file instanceof File) {
-        formData.append(`documents[${index}][file]`, doc.file);
-        formData.append(`documents[${index}][type]`, doc.type);
-      }
-    });
+  // If there are files in documents, we would need FormData (not implemented here since no files in current payload)
+  const hasFiles = normalizedData.documents?.some(
+    (doc) => doc.file instanceof File
+  );
+  if (hasFiles) {
+    throw new Error(
+      "File uploads are not supported in this implementation. Use FormData if needed."
+    );
   }
 
   const response = await apiFetch<any>(
     "/employees",
     "POST",
     token,
-    formData,
-    true
+    normalizedData,
+    false // Send as JSON, not multipart
   );
   if (!response.employee) {
     throw new Error("Invalid server response: 'employee' object missing");
   }
-
   return response.employee;
 };
 
@@ -101,32 +115,52 @@ export const updateEmployee = async (
   data: Partial<Employee>,
   token: string | null
 ): Promise<Employee> => {
-  const formData = new FormData();
+  // Normalize array fields to ensure they are arrays
+  const normalizedData = {
+    ...data,
+    dependents:
+      data.dependents !== undefined
+        ? Array.isArray(data.dependents)
+          ? data.dependents
+          : data.dependents
+            ? [data.dependents]
+            : []
+        : [],
+    education_background:
+      data.education_background !== undefined
+        ? Array.isArray(data.education_background)
+          ? data.education_background
+          : data.education_background
+            ? [data.education_background]
+            : []
+        : [],
+    documents:
+      data.documents !== undefined
+        ? Array.isArray(data.documents)
+          ? data.documents
+          : data.documents
+            ? [data.documents]
+            : []
+        : [],
+  };
 
-  // Append non-file fields
-  for (const [key, value] of Object.entries(data)) {
-    if (
-      key === "dependents" ||
-      key === "education_background" ||
-      key === "documents"
-    ) {
-      formData.append(key, JSON.stringify(value));
-    } else if (value !== undefined && value !== null) {
-      formData.append(key, value.toString());
-    }
+  // If there are files in documents, we would need FormData (not implemented here since no files in current payload)
+  const hasFiles = normalizedData.documents?.some(
+    (doc) => doc.file instanceof File
+  );
+  if (hasFiles) {
+    throw new Error(
+      "File uploads are not supported in this implementation. Use FormData if needed."
+    );
   }
 
-  // Append document files
-  if (data.documents && Array.isArray(data.documents)) {
-    data.documents.forEach((doc, index) => {
-      if (doc.file instanceof File) {
-        formData.append(`documents[${index}][file]`, doc.file);
-        formData.append(`documents[${index}][type]`, doc.type);
-      }
-    });
-  }
-
-  return apiFetch<Employee>(`/employees/${id}`, "PUT", token, formData, true);
+  return apiFetch<Employee>(
+    `/employees/${id}`,
+    "PUT",
+    token,
+    normalizedData,
+    false
+  );
 };
 
 export const deleteEmployee = (id: number, token: string | null) =>
