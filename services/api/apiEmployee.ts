@@ -1,4 +1,12 @@
-import { Employee, User, Department, Designation } from "../../types/employee";
+import {
+  Employee,
+  User,
+  Department,
+  Designation,
+  Dependent,
+  Education,
+  Document,
+} from "../../types/employee";
 
 const BASE_URL = "http://127.0.0.1:8000/api";
 
@@ -32,6 +40,7 @@ const apiFetch = async <T>(
       errorData.message || `HTTP error! Status: ${response.status}`
     );
     (error as any).response = errorData;
+    (error as any).status = response.status;
     throw error;
   }
 
@@ -67,56 +76,90 @@ export const createEmployee = async (
   data: Partial<Employee>,
   token: string | null
 ): Promise<Employee> => {
-  // Normalize array fields to ensure they are arrays
   const normalizedData = {
     ...data,
     dependents:
       data.dependents !== undefined
         ? Array.isArray(data.dependents)
           ? data.dependents
-          : data.dependents
-            ? [data.dependents]
-            : []
+          : [data.dependents as Dependent]
         : [],
     education_background:
       data.education_backgrounds !== undefined
         ? Array.isArray(data.education_backgrounds)
           ? data.education_backgrounds
-          : data.education_backgrounds
-            ? [data.education_backgrounds]
-            : []
+          : [data.education_backgrounds as Education]
         : [],
-    documents:
-      data.documents !== undefined
-        ? Array.isArray(data.documents)
-          ? data.documents
-          : data.documents
-            ? [data.documents]
-            : []
-        : [],
+    documents: normalizeDocuments(data.documents),
   };
 
-  // If there are files in documents, we would need FormData (not implemented here since no files in current payload)
-  const hasFiles = normalizedData.documents?.some(
-    (doc) => doc.file instanceof File
-  );
-  if (hasFiles) {
-    throw new Error(
-      "File uploads are not supported in this implementation. Use FormData if needed."
-    );
-  }
+  const hasFiles = normalizedData.documents?.length > 0;
 
-  const response = await apiFetch<any>(
-    "/employees",
-    "POST",
-    token,
-    normalizedData,
-    false // Send as JSON, not multipart
-  );
-  if (!response.employee) {
-    throw new Error("Invalid server response: 'employee' object missing");
+  if (hasFiles) {
+    const formData = new FormData();
+
+    Object.entries(normalizedData).forEach(([key, value]) => {
+      if (key === "dependents" && Array.isArray(value)) {
+        (value as Dependent[]).forEach((dep, index) => {
+          formData.append(`dependents[${index}][name]`, dep.name || "");
+          formData.append(
+            `dependents[${index}][relationship]`,
+            dep.relationship || ""
+          );
+        });
+      } else if (key === "education_background" && Array.isArray(value)) {
+        (value as Education[]).forEach((edu, index) => {
+          formData.append(
+            `education_background[${index}][attainment]`,
+            edu.attainment || ""
+          );
+          formData.append(
+            `education_background[${index}][course]`,
+            edu.course || ""
+          );
+        });
+      } else if (key === "documents" && Array.isArray(value)) {
+        (value as Document[]).forEach((doc, index) => {
+          formData.append(`documents[${index}][type]`, doc.type || "");
+          if (doc.file instanceof File) {
+            formData.append(`documents[${index}][file]`, doc.file);
+          }
+        });
+      } else {
+        formData.append(key, value === null ? "" : value.toString());
+      }
+    });
+
+    // Log FormData entries for debugging
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
+
+    const response = await apiFetch<any>(
+      "/employees",
+      "POST",
+      token,
+      formData,
+      true
+    );
+
+    if (!response.employee) {
+      throw new Error("Invalid server response: 'employee' object missing");
+    }
+    return response.employee;
+  } else {
+    const response = await apiFetch<any>(
+      "/employees",
+      "POST",
+      token,
+      normalizedData,
+      false
+    );
+    if (!response.employee) {
+      throw new Error("Invalid server response: 'employee' object missing");
+    }
+    return response.employee;
   }
-  return response.employee;
 };
 
 export const updateEmployee = async (
@@ -124,52 +167,89 @@ export const updateEmployee = async (
   data: Partial<Employee>,
   token: string | null
 ): Promise<Employee> => {
-  // Normalize array fields to ensure they are arrays
   const normalizedData = {
     ...data,
     dependents:
       data.dependents !== undefined
         ? Array.isArray(data.dependents)
           ? data.dependents
-          : data.dependents
-            ? [data.dependents]
-            : []
+          : [data.dependents as Dependent]
         : [],
     education_background:
       data.education_backgrounds !== undefined
         ? Array.isArray(data.education_backgrounds)
           ? data.education_backgrounds
-          : data.education_backgrounds
-            ? [data.education_backgrounds]
-            : []
+          : [data.education_backgrounds as Education]
         : [],
-    documents:
-      data.documents !== undefined
-        ? Array.isArray(data.documents)
-          ? data.documents
-          : data.documents
-            ? [data.documents]
-            : []
-        : [],
+    documents: normalizeDocuments(data.documents, true),
   };
 
-  // If there are files in documents, we would need FormData (not implemented here since no files in current payload)
   const hasFiles = normalizedData.documents?.some(
-    (doc) => doc.file instanceof File
+    (doc: Document) => doc.file instanceof File
   );
+
   if (hasFiles) {
-    throw new Error(
-      "File uploads are not supported in this implementation. Use FormData if needed."
+    const formData = new FormData();
+
+    Object.entries(normalizedData).forEach(([key, value]) => {
+      if (key === "dependents" && Array.isArray(value)) {
+        (value as Dependent[]).forEach((dep, index) => {
+          if (dep.id) {
+            formData.append(`dependents[${index}][id]`, dep.id.toString());
+          }
+          formData.append(`dependents[${index}][name]`, dep.name || "");
+          formData.append(
+            `dependents[${index}][relationship]`,
+            dep.relationship || ""
+          );
+        });
+      } else if (key === "education_background" && Array.isArray(value)) {
+        (value as Education[]).forEach((edu, index) => {
+          if (edu.id) {
+            formData.append(
+              `education_background[${index}][id]`,
+              edu.id.toString()
+            );
+          }
+          formData.append(
+            `education_background[${index}][attainment]`,
+            edu.attainment || ""
+          );
+          formData.append(
+            `education_background[${index}][course]`,
+            edu.course || ""
+          );
+        });
+      } else if (key === "documents" && Array.isArray(value)) {
+        (value as Document[]).forEach((doc, index) => {
+          if (doc.id) {
+            formData.append(`documents[${index}][id]`, doc.id.toString());
+          }
+          formData.append(`documents[${index}][type]`, doc.type || "");
+          if (doc.file instanceof File) {
+            formData.append(`documents[${index}][file]`, doc.file);
+          }
+        });
+      } else {
+        formData.append(key, value === null ? "" : value.toString());
+      }
+    });
+
+    // Log FormData entries for debugging
+    for (const [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
+
+    return apiFetch<Employee>(`/employees/${id}`, "PUT", token, formData, true);
+  } else {
+    return apiFetch<Employee>(
+      `/employees/${id}`,
+      "PUT",
+      token,
+      normalizedData,
+      false
     );
   }
-
-  return apiFetch<Employee>(
-    `/employees/${id}`,
-    "PUT",
-    token,
-    normalizedData,
-    false
-  );
 };
 
 export const deleteEmployee = (id: number, token: string | null) =>
@@ -177,3 +257,33 @@ export const deleteEmployee = (id: number, token: string | null) =>
 
 export const deleteEducationBackground = (id: number, token: string | null) =>
   apiFetch<void>(`/education-backgrounds/${id}`, "DELETE", token);
+
+export const deleteDependent = (id: number, token: string | null) =>
+  apiFetch<void>(`/dependents/${id}`, "DELETE", token);
+
+export const deleteDocument = (id: number, token: string | null) =>
+  apiFetch<void>(`/documents/${id}`, "DELETE", token);
+
+// Helper function to normalize documents with type safety
+function normalizeDocuments(
+  docs?: Document[] | Document,
+  isUpdate?: boolean
+): Document[] {
+  if (!docs) return [];
+  if (Array.isArray(docs)) {
+    return docs.filter((doc: Document) => {
+      const hasRequiredProps =
+        doc.type && (isUpdate || doc.file instanceof File);
+      return hasRequiredProps;
+    });
+  }
+  if (
+    docs &&
+    typeof docs === "object" &&
+    "type" in docs &&
+    (isUpdate || ("file" in docs && docs.file instanceof File))
+  ) {
+    return [docs as Document];
+  }
+  return [];
+}

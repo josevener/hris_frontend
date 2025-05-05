@@ -26,6 +26,7 @@ export interface Designation {
 }
 
 export interface Dependent {
+  id?: number;
   name: string;
   relationship: string;
 }

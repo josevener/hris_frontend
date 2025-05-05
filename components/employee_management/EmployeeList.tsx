@@ -44,6 +44,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
     tax: "",
     dependents: [],
     education_backgrounds: [],
+    documents: [],
     company_id_number: "",
   });
   const [isAdding, setIsAdding] = useState(false);
@@ -133,6 +134,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
         tax: "",
         dependents: [],
         education_backgrounds: [],
+        documents: [],
         company_id_number: "",
       });
       toast.success("Employee added successfully");
@@ -174,6 +176,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
         tax: selectedEmployee.tax || "",
         dependents: selectedEmployee.dependents || [],
         education_backgrounds: selectedEmployee.education_backgrounds || [],
+        documents: selectedEmployee.documents || [], // Include documents in the payload
       };
 
       console.log("Update payload:", payload);

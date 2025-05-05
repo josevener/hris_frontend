@@ -1,4 +1,6 @@
-import { useState, useEffect, Dispatch, SetStateAction } from "react";
+"use client";
+
+import { useState, Dispatch, SetStateAction, useEffect } from "react";
 import { toast } from "sonner";
 import { Employee, User, Department, Designation } from "../types/employee";
 import {

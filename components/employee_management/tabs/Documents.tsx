@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { Employee, UserRole } from "@/types/employee";
+import { getCookie } from "@/lib/auth";
+import { deleteDocument } from "@/services/api/apiEmployee";
+import { toast } from "sonner";
 
 interface DocumentsTabProps {
   employee: Partial<Employee>;
@@ -20,38 +23,100 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
   isEditMode,
   isEditable,
 }) => {
-  // Initialize state for each document type
-  const [documents, setDocuments] = useState<{ type: string; file: File | null }[]>([
-    { type: "resume", file: null },
-    { type: "id_proof", file: null },
-    { type: "certificates", file: null },
-  ]);
+  const [documents, setDocuments] = useState<{ id?: number; type: string; file: File | null; file_path?: string }[]>(() => {
+    const defaultDocs = [
+      { type: "resume", file: null },
+      { type: "id_proof", file: null },
+      { type: "certificates", file: null },
+    ];
 
-  // Sync with employee.documents if provided
+    if (isEditMode && employee.documents && employee.documents.length > 0) {
+      return defaultDocs.map((defaultDoc) => {
+        const existingDoc = employee.documents!.find((doc) => doc.type === defaultDoc.type);
+        if (existingDoc) {
+          return {
+            id: existingDoc.id,
+            type: existingDoc.type,
+            file: null,
+            file_path: existingDoc.file_path,
+          };
+        }
+        return defaultDoc;
+      });
+    }
+
+    return defaultDocs;
+  });
+
+  const [deletingType, setDeletingType] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isEditMode && employee.documents && employee.documents.length > 0) {
+      const updatedDocs = documents.map((doc) => {
+        const existingDoc = employee.documents!.find((d) => d.type === doc.type);
+        if (existingDoc && !doc.file && !doc.file_path) {
+          return {
+            ...doc,
+            id: existingDoc.id,
+            file_path: existingDoc.file_path,
+          };
+        }
+        return doc;
+      });
+      setDocuments(updatedDocs);
+    }
+  }, [employee.documents, isEditMode]);
+
   const handleFileChange = (type: string, file: File | null) => {
     const updatedDocs = documents.map((doc) =>
-      doc.type === type ? { ...doc, file } : doc
+      doc.type === type ? { ...doc, file, file_path: file ? undefined : doc.file_path } : doc
     );
     setDocuments(updatedDocs);
 
-    // Update employee.documents with the new file list
     const newDocs = updatedDocs
-      .filter((doc) => doc.file !== null)
-      .map((doc) => ({ type: doc.type, file: doc.file! }));
+      .filter((doc) => doc.file || doc.file_path)
+      .map((doc) => ({
+        id: doc.id,
+        type: doc.type,
+        file: doc.file || undefined,
+        file_path: doc.file_path,
+      }));
+
     onChange({ ...employee, documents: newDocs });
   };
 
-  const handleRemoveFile = (type: string) => {
+  const handleRemoveFile = async (type: string) => {
+    setDeletingType(type);
+    const token = await getCookie("auth_token");
+
+    const docToDelete = documents.find((doc) => doc.type === type && doc.id);
+    if (docToDelete && token) {
+      try {
+        await deleteDocument(Number(docToDelete.id), token);
+        toast.success("Document deleted successfully");
+      } catch (error) {
+        toast.error("Failed to delete document");
+        console.error("Delete error:", error);
+      }
+    }
+
     const updatedDocs = documents.map((doc) =>
-      doc.type === type ? { ...doc, file: null } : doc
+      doc.type === type ? { ...doc, file: null, file_path: undefined } : doc
     );
+
     setDocuments(updatedDocs);
 
-    // Update employee.documents by filtering out the removed file
     const newDocs = updatedDocs
-      .filter((doc) => doc.file !== null)
-      .map((doc) => ({ type: doc.type, file: doc.file! }));
+      .filter((doc) => doc.file || doc.file_path)
+      .map((doc) => ({
+        id: doc.id,
+        type: doc.type,
+        file: doc.file || undefined,
+        file_path: doc.file_path,
+      }));
+
     onChange({ ...employee, documents: newDocs });
+    setDeletingType(null);
   };
 
   return (
@@ -64,19 +129,25 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
           >
             {doc.type.replace("_", " ")}
           </Label>
-          {doc.file ? (
+          {doc.file || doc.file_path ? (
             <div className="flex items-center gap-2">
               <span className="text-foreground dark:text-foreground truncate max-w-[150px]">
-                {doc.file.name}
+                {doc.file ? doc.file.name : doc.file_path?.split("/").pop()}
               </span>
               <Button
                 variant="destructive"
                 size="sm"
                 onClick={() => handleRemoveFile(doc.type)}
-                disabled={(!isEditable && isEditMode) || userRole === "Employee"}
+                disabled={
+                  deletingType === doc.type || (!isEditable && isEditMode) || userRole === "Employee"
+                }
                 className="dark:bg-red-700 dark:hover:bg-red-600"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2
+                  className={`h-4 w-4 transition-transform ${
+                    deletingType === doc.type ? "animate-spin" : ""
+                  }`}
+                />
               </Button>
             </div>
           ) : (
