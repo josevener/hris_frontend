@@ -1,4 +1,3 @@
-// apiEmployee.ts
 import { Employee, User, Department, Designation } from "../../types/employee";
 
 const BASE_URL = "http://127.0.0.1:8000/api";
@@ -39,8 +38,13 @@ const apiFetch = async <T>(
   return response.json();
 };
 
-export const fetchEmployees = (token: string | null) =>
-  apiFetch<Employee[]>("/employees", "GET", token);
+export const fetchEmployees = async (token: string | null) => {
+  const employees = await apiFetch<Employee[]>("/employees", "GET", token);
+  return employees.map((employee) => ({
+    ...employee,
+    education_background: employee.education_backgrounds || [],
+  }));
+};
 
 export const fetchUsers = (token: string | null) =>
   apiFetch<User[]>("/users-doesnt-have-employee", "GET", token);
@@ -51,8 +55,13 @@ export const fetchDepartments = (token: string | null) =>
 export const fetchDesignations = (token: string | null) =>
   apiFetch<Designation[]>("/designations", "GET", token);
 
-export const fetchEmployee = (id: number, token: string | null) =>
-  apiFetch<Employee>(`/employees/${id}`, "GET", token);
+export const fetchEmployee = async (id: number, token: string | null) => {
+  const response = await apiFetch<any>(`/employees/${id}`, "GET", token);
+  return {
+    ...response.employee,
+    education_background: response.employee.educationBackgrounds || [],
+  } as Employee;
+};
 
 export const createEmployee = async (
   data: Partial<Employee>,
@@ -70,11 +79,11 @@ export const createEmployee = async (
             : []
         : [],
     education_background:
-      data.education_background !== undefined
-        ? Array.isArray(data.education_background)
-          ? data.education_background
-          : data.education_background
-            ? [data.education_background]
+      data.education_backgrounds !== undefined
+        ? Array.isArray(data.education_backgrounds)
+          ? data.education_backgrounds
+          : data.education_backgrounds
+            ? [data.education_backgrounds]
             : []
         : [],
     documents:
@@ -127,11 +136,11 @@ export const updateEmployee = async (
             : []
         : [],
     education_background:
-      data.education_background !== undefined
-        ? Array.isArray(data.education_background)
-          ? data.education_background
-          : data.education_background
-            ? [data.education_background]
+      data.education_backgrounds !== undefined
+        ? Array.isArray(data.education_backgrounds)
+          ? data.education_backgrounds
+          : data.education_backgrounds
+            ? [data.education_backgrounds]
             : []
         : [],
     documents:
@@ -165,3 +174,6 @@ export const updateEmployee = async (
 
 export const deleteEmployee = (id: number, token: string | null) =>
   apiFetch<void>(`/employees/${id}`, "DELETE", token);
+
+export const deleteEducationBackground = (id: number, token: string | null) =>
+  apiFetch<void>(`/education-backgrounds/${id}`, "DELETE", token);

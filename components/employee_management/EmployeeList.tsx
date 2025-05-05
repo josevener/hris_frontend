@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import EmployeeForm from "./EmployeeForm";
 import DeleteConfirmation from "./DeleteConfirmation";
 import { Employee, SortKey, UserRole } from "@/types/employee";
 import { useEmployeeData } from "@/hooks/useEmployeeData";
-import { createEmployee, deleteEmployee, fetchEmployees, updateEmployee } from "@/services/api/apiEmployee";
+import { createEmployee, deleteEmployee, fetchEmployees, fetchEmployee, updateEmployee } from "@/services/api/apiEmployee";
 import { EmployeeTable } from "./EmployeeTable";
 import { useAuth } from "@/lib/AuthContext";
 
@@ -43,7 +43,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
     tin: "",
     tax: "",
     dependents: [],
-    education_background: [],
+    education_backgrounds: [],
     company_id_number: "",
   });
   const [isAdding, setIsAdding] = useState(false);
@@ -52,6 +52,18 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
   const itemsPerPage = 10;
 
   const isLoading = dataLoading || isAdding || isUpdating || isDeleting;
+
+  // Refs for focus management
+  const roleFilterSelectRef = useRef<HTMLButtonElement>(null);
+
+  // Blur the SelectTrigger when a sheet opens to prevent it from retaining focus
+  useEffect(() => {
+    if (isAddSheetOpen || isViewSheetOpen) {
+      if (roleFilterSelectRef.current) {
+        roleFilterSelectRef.current.blur();
+      }
+    }
+  }, [isAddSheetOpen, isViewSheetOpen]);
 
   const validateEmployee = (employee: Partial<Employee>): boolean => {
     if (!employee.user_id || employee.user_id === 0) {
@@ -120,7 +132,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
         tin: "",
         tax: "",
         dependents: [],
-        education_background: [],
+        education_backgrounds: [],
         company_id_number: "",
       });
       toast.success("Employee added successfully");
@@ -161,8 +173,10 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
         tin: selectedEmployee.tin || "",
         tax: selectedEmployee.tax || "",
         dependents: selectedEmployee.dependents || [],
-        education_background: selectedEmployee.education_background || [],
+        education_backgrounds: selectedEmployee.education_backgrounds || [],
       };
+
+      console.log("Update payload:", payload);
 
       await updateEmployee(selectedEmployee.id, payload, token);
 
@@ -203,10 +217,17 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
     }
   };
 
-  const handleViewProfile = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    setIsViewSheetOpen(true);
-    setIsEditable(false); // Start in view-only mode
+  const handleViewProfile = async (employee: Employee) => {
+    try {
+      const fullEmployeeData = await fetchEmployee(employee.id, token);
+      console.log("Fetched employee data:", fullEmployeeData);
+      setSelectedEmployee(fullEmployeeData);
+      setIsViewSheetOpen(true);
+      setIsEditable(false);
+    } catch (err: any) {
+      toast.error("Failed to load employee details");
+      console.error("View profile error:", err);
+    }
   };
 
   const handleSort = (key: SortKey) => {
@@ -284,7 +305,10 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
             className="max-w-sm bg-white dark:bg-gray-800 dark:text-foreground dark:border-gray-700"
           />
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800 dark:text-foreground dark:border-gray-700">
+            <SelectTrigger
+              ref={roleFilterSelectRef}
+              className="w-[180px] bg-white dark:bg-gray-800 dark:text-foreground dark:border-gray-700"
+            >
               <SelectValue placeholder="Filter by Role" />
             </SelectTrigger>
             <SelectContent className="bg-white dark:bg-gray-800 dark:text-foreground dark:border-gray-700">

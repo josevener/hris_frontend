@@ -4,7 +4,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Employee, UserRole } from "@/types/employee";
+import { deleteEducationBackground } from "@/services/api/apiEmployee";
+import { getCookie } from "@/lib/auth";
 
 interface EducationBackgroundTabProps {
   employee: Partial<Employee>;
@@ -21,39 +24,67 @@ const EducationBackgroundTab: React.FC<EducationBackgroundTabProps> = ({
   isEditMode,
   isEditable,
 }) => {
+  // Initialize with employee's education_backgrounds or a default entry
   const [educationBackground, setEducationBackground] = useState(() => {
-    return employee.education_background && employee.education_background.length > 0
-      ? employee.education_background
-      : [{ attainment: "", course: "" }];
+    const edu = employee.education_backgrounds;
+    if (Array.isArray(edu) && edu.length > 0) {
+      return edu;
+    }
+    return [{ attainment: "", course: "" }];
   });
 
+  // Track whether the user has modified the education background
+  const [isModified, setIsModified] = useState(false);
+
+  // Sync local state with prop changes only if not modified by user
   useEffect(() => {
-    const newEducationBackground = employee.education_background && employee.education_background.length > 0
-      ? employee.education_background
-      : [{ attainment: "", course: "" }];
-    setEducationBackground(newEducationBackground);
-  }, [employee.education_background]);
+    if (!isModified) {
+      const edu = employee.education_backgrounds;
+      if (Array.isArray(edu) && edu.length > 0) {
+        setEducationBackground(edu);
+      } else {
+        setEducationBackground([{ attainment: "", course: "" }]);
+      }
+    }
+  }, [employee.education_backgrounds, isModified]);
 
   const handleAddEducation = () => {
     const newEducationBackground = [...educationBackground, { attainment: "", course: "" }];
     setEducationBackground(newEducationBackground);
-    onChange({ ...employee, education_background: newEducationBackground });
+    setIsModified(true); // Mark as modified
+    onChange({ ...employee, education_backgrounds: newEducationBackground });
   };
 
-  const handleRemoveEducation = (index: number) => {
-    let newEducationBackground = educationBackground.filter((_, i) => i !== index);
-    if (newEducationBackground.length === 0) {
-      newEducationBackground = [{ attainment: "", course: "" }];
+  const handleRemoveEducation = async (index: number) => {
+    const education = educationBackground[index];
+    try {
+      // If the record has an ID, delete it from the backend
+      if (education.id) {
+        const token = await getCookie("auth_token"); // Retrieve token from cookies
+        await deleteEducationBackground(education.id, token);
+        toast.success("Education record deleted successfully");
+      }
+
+      // Update local state
+      let newEducationBackground = educationBackground.filter((_, i) => i !== index);
+      if (newEducationBackground.length === 0) {
+        newEducationBackground = [{ attainment: "", course: "" }];
+      }
+      setEducationBackground(newEducationBackground);
+      setIsModified(true); // Mark as modified
+      onChange({ ...employee, education_backgrounds: newEducationBackground });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete education record");
+      console.error("Delete error:", err);
     }
-    setEducationBackground(newEducationBackground);
-    onChange({ ...employee, education_background: newEducationBackground });
   };
 
   const handleEducationChange = (index: number, field: "attainment" | "course", value: string) => {
     const newEducationBackground = [...educationBackground];
     newEducationBackground[index] = { ...newEducationBackground[index], [field]: value };
     setEducationBackground(newEducationBackground);
-    onChange({ ...employee, education_background: newEducationBackground });
+    setIsModified(true); // Mark as modified
+    onChange({ ...employee, education_backgrounds: newEducationBackground });
   };
 
   return (

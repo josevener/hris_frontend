@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,7 +40,15 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
   isEditable = false,
   setIsEditable,
 }) => {
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const [activeTab, setActiveTab] = useState("personal");
+
+  // Move focus to the Cancel button when the sheet opens
+  useEffect(() => {
+    if (cancelButtonRef.current) {
+      cancelButtonRef.current.focus();
+    }
+  }, []);
 
   const handleEditClick = () => {
     if (setIsEditable) {
@@ -151,6 +159,7 @@ const EmployeeForm: React.FC<EmployeeFormProps> = ({
         )}
         <div className="flex gap-2">
           <Button
+            ref={cancelButtonRef}
             variant="outline"
             onClick={onCancel}
             className="dark:bg-gray-700 dark:text-foreground dark:border-gray-600 dark:hover:bg-gray-600"

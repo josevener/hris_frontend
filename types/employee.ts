@@ -31,6 +31,7 @@ export interface Dependent {
 }
 
 export interface Education {
+  id?: number;
   attainment: string;
   course: string;
 }
@@ -67,7 +68,7 @@ export interface Employee {
   tin?: string | null;
   tax?: string | null;
   dependents?: Dependent[];
-  education_background?: Education[];
+  education_backgrounds?: Education[];
   documents?: Document[];
 }
 
