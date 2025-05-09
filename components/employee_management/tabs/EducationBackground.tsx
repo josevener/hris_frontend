@@ -60,8 +60,8 @@ const EducationBackgroundTab: React.FC<EducationBackgroundTabProps> = ({
     try {
       // If the record has an ID, delete it from the backend
       if (education.id) {
-        const token = await getCookie("auth_token"); // Retrieve token from cookies
-        await deleteEducationBackground(education.id, token);
+        // const token = await getCookie("auth_token"); // Retrieve token from cookies
+        // await deleteEducationBackground(education.id, token);
         toast.success("Education record deleted successfully");
       }
 
@@ -73,6 +73,8 @@ const EducationBackgroundTab: React.FC<EducationBackgroundTabProps> = ({
       setEducationBackground(newEducationBackground);
       setIsModified(true); // Mark as modified
       onChange({ ...employee, education_backgrounds: newEducationBackground });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to delete education record");
       console.error("Delete error:", err);

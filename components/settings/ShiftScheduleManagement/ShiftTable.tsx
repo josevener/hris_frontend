@@ -8,7 +8,7 @@ import { format } from "date-fns";
 interface ShiftTableProps {
   shifts: Shift[];
   loading: boolean;
-  handleEdit: (shift: Shift) => void;
+  // handleEdit: (shift: Shift) => void;
   handleDelete: (shift: Shift) => void;
   handleView: (shift: Shift) => void;
   userRole: UserRole;
@@ -17,7 +17,7 @@ interface ShiftTableProps {
 const ShiftTable: React.FC<ShiftTableProps> = ({
   shifts,
   loading,
-  handleEdit,
+  // handleEdit,
   handleDelete,
   handleView,
   userRole,

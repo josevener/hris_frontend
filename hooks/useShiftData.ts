@@ -1,10 +1,10 @@
-// useShiftData.ts
 import { useState, useEffect } from "react";
 import {
   createShift,
   deleteShift,
   fetchShifts,
   updateShift,
+  fetchEmployeesDoesntHaveShift,
 } from "@/services/api/apiShifts";
 import { fetchEmployees } from "@/services/api/apiEmployee";
 import { toast } from "sonner";
@@ -14,7 +14,10 @@ import { getCookie } from "@/lib/auth";
 
 export const useShiftData = () => {
   const [shifts, setShifts] = useState<Shift[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [allEmployees, setAllEmployees] = useState<Employee[]>([]);
+  const [employeesWithoutShifts, setEmployeesWithoutShifts] = useState<
+    Employee[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -35,20 +38,27 @@ export const useShiftData = () => {
         setLoading(true);
         setError(null);
 
-        const [shiftData, employeeData] = await Promise.all([
-          fetchShifts(),
-          fetchEmployees(token),
-        ]);
+        const [shiftData, allEmployeeData, employeesWithoutShiftData] =
+          await Promise.all([
+            fetchShifts(token),
+            fetchEmployees(token),
+            fetchEmployeesDoesntHaveShift(token),
+          ]);
 
         const enrichedShifts = shiftData.map((shift) => ({
           ...shift,
-          employee: Array.isArray(employeeData)
-            ? employeeData.find((emp) => emp.id === shift.employee_id)
+          employee: Array.isArray(allEmployeeData)
+            ? allEmployeeData.find((emp) => emp.id === shift.employee_id)
             : undefined,
         }));
 
         setShifts(enrichedShifts);
-        setEmployees(Array.isArray(employeeData) ? employeeData : []);
+        setAllEmployees(Array.isArray(allEmployeeData) ? allEmployeeData : []);
+        setEmployeesWithoutShifts(
+          Array.isArray(employeesWithoutShiftData)
+            ? employeesWithoutShiftData
+            : []
+        );
       } catch (err: any) {
         setError(err.message || "Failed to fetch shift data.");
         toast.error(err.message || "Failed to fetch shift data.");
@@ -71,17 +81,24 @@ export const useShiftData = () => {
         description: shift.description,
         schedule_settings: shift.schedule_settings,
       };
-      const newShift = await createShift(payload);
-      const updatedShifts = await fetchShifts();
-      const employeeData = await fetchEmployees(token);
+      const newShift = await createShift(payload, token);
+      const updatedShifts = await fetchShifts(token);
+      const allEmployeeData = await fetchEmployees(token);
+      const employeesWithoutShiftData =
+        await fetchEmployeesDoesntHaveShift(token);
       const enrichedShifts = updatedShifts.map((shift) => ({
         ...shift,
-        employee: Array.isArray(employeeData)
-          ? employeeData.find((emp) => emp.id === shift.employee_id)
+        employee: Array.isArray(allEmployeeData)
+          ? allEmployeeData.find((emp) => emp.id === shift.employee_id)
           : undefined,
       }));
       setShifts(enrichedShifts);
-      setEmployees(Array.isArray(employeeData) ? employeeData : []);
+      setAllEmployees(Array.isArray(allEmployeeData) ? allEmployeeData : []);
+      setEmployeesWithoutShifts(
+        Array.isArray(employeesWithoutShiftData)
+          ? employeesWithoutShiftData
+          : []
+      );
       return newShift;
     } catch (err: any) {
       setError(err.message || "Failed to add shift.");
@@ -100,17 +117,24 @@ export const useShiftData = () => {
         description: shift.description,
         schedule_settings: shift.schedule_settings,
       };
-      await updateShift(id, payload);
-      const updatedShifts = await fetchShifts();
-      const employeeData = await fetchEmployees(token);
+      await updateShift(id, payload, token);
+      const updatedShifts = await fetchShifts(token);
+      const allEmployeeData = await fetchEmployees(token);
+      const employeesWithoutShiftData =
+        await fetchEmployeesDoesntHaveShift(token);
       const enrichedShifts = updatedShifts.map((shift) => ({
         ...shift,
-        employee: Array.isArray(employeeData)
-          ? employeeData.find((emp) => emp.id === shift.employee_id)
+        employee: Array.isArray(allEmployeeData)
+          ? allEmployeeData.find((emp) => emp.id === shift.employee_id)
           : undefined,
       }));
       setShifts(enrichedShifts);
-      setEmployees(Array.isArray(employeeData) ? employeeData : []);
+      setAllEmployees(Array.isArray(allEmployeeData) ? allEmployeeData : []);
+      setEmployeesWithoutShifts(
+        Array.isArray(employeesWithoutShiftData)
+          ? employeesWithoutShiftData
+          : []
+      );
     } catch (err: any) {
       setError(err.message || "Failed to edit shift.");
       toast.error(err.message || "Failed to edit shift.");
@@ -121,17 +145,24 @@ export const useShiftData = () => {
   const removeShift = async (id: number) => {
     if (!token) throw new Error("No authentication token available");
     try {
-      await deleteShift(id);
-      const updatedShifts = await fetchShifts();
-      const employeeData = await fetchEmployees(token);
+      await deleteShift(id, token);
+      const updatedShifts = await fetchShifts(token);
+      const allEmployeeData = await fetchEmployees(token);
+      const employeesWithoutShiftData =
+        await fetchEmployeesDoesntHaveShift(token);
       const enrichedShifts = updatedShifts.map((shift) => ({
         ...shift,
-        employee: Array.isArray(employeeData)
-          ? employeeData.find((emp) => emp.id === shift.employee_id)
+        employee: Array.isArray(allEmployeeData)
+          ? allEmployeeData.find((emp) => emp.id === shift.employee_id)
           : undefined,
       }));
       setShifts(enrichedShifts);
-      setEmployees(Array.isArray(employeeData) ? employeeData : []);
+      setAllEmployees(Array.isArray(allEmployeeData) ? allEmployeeData : []);
+      setEmployeesWithoutShifts(
+        Array.isArray(employeesWithoutShiftData)
+          ? employeesWithoutShiftData
+          : []
+      );
     } catch (err: any) {
       setError(err.message || "Failed to remove shift.");
       toast.error(err.message || "Failed to remove shift.");
@@ -141,7 +172,8 @@ export const useShiftData = () => {
 
   return {
     shifts,
-    employees,
+    employees: employeesWithoutShifts,
+    allEmployees,
     loading,
     error,
     setShifts,

@@ -14,7 +14,7 @@ import { Shift } from "@/types/shift";
 import DeleteConfirmation from "./ShiftDeleteConfirmation";
 
 const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => {
-  const { shifts, employees, loading, error, addShift, editShift, removeShift } = useShiftData();
+  const { shifts, employees: employeesWithoutShifts, allEmployees, loading, error, addShift, editShift, removeShift } = useShiftData();
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -194,11 +194,6 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
       <ShiftTable
         shifts={filteredShifts}
         loading={loading}
-        handleEdit={(item) => {
-          setSelectedShift(item);
-          setIsEditMode(true);
-          setIsDetailModalOpen(true);
-        }}
         handleDelete={(item) => {
           setSelectedShift(item);
           setIsDeleteModalOpen(true);
@@ -210,7 +205,7 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
         <ShiftForm
           shift={newShift}
-          employees={employees}
+          employees={employeesWithoutShifts}
           onChange={setNewShift}
           onSave={handleAddShift}
           onCancel={() => setIsAddModalOpen(false)}
@@ -228,7 +223,7 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
         {selectedShift && (
           <ShiftForm
             shift={selectedShift}
-            employees={employees}
+            employees={allEmployees} // Use allEmployees for view/edit to show the actual assigned employee
             onChange={(updatedShift) => setSelectedShift(updatedShift as Shift)}
             onSave={handleUpdateShift}
             onCancel={() => setIsDetailModalOpen(false)}

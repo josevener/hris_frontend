@@ -23,24 +23,24 @@ export function AuthProvider({
   const [loading, setLoading] = useState(!initialToken || !initialUser);
 
   useEffect(() => {
-    console.log("AuthContext - Initial token:", initialToken, "Initial user:", initialUser);
+    // console.log("AuthContext - Initial token:", initialToken, "Initial user:", initialUser);
     const syncAuth = async () => {
       if (!initialToken || !initialUser) {
-        console.log("No initial data, syncing with /api/auth-data");
+        // console.log("No initial data, syncing with /api/auth-data");
         try {
           const response = await api.get("/api/auth-data");
-          console.log("Axios auth data:", response.data);
+          // console.log("Axios auth data:", response.data);
           setToken(response.data.token);
           setUser(response.data.user);
         } catch (error) {
-          console.error("Axios sync error:", error);
+          // console.error("Axios sync error:", error);
           setToken(null);
           setUser(null);
         } finally {
           setLoading(false);
         }
       } else {
-        console.log("Initial data present, no sync needed");
+        // console.log("Initial data present, no sync needed");
         setLoading(false); // Set loading false first
       }
     };
@@ -49,20 +49,22 @@ export function AuthProvider({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const login = async (newToken: string, newUser: any) => {
-    console.log("Login - Token:", newToken, "User:", newUser);
+    // console.log("Login - Token:", newToken, "User:", newUser);
     setToken(newToken);
     setUser(newUser);
   };
 
   const logout = async () => {
-    console.log("Logging out");
+    // console.log("Logging out");
     setToken(null);
     setUser(null);
     try {
       await api.post("/api/logout");
-      console.log("Logout successful");
+      // console.log("Logout successful");
     } catch (error) {
-      console.error("Logout failed:", error);
+
+
+      // console.error("Logout failed:", error);
     }
   };
 

@@ -1,4 +1,3 @@
-import SettingsLayout from "./SettingsLayout";
 import ShiftList from "./ShiftScheduleManagement/ShiftList";
 
 // Shift Schedule Page

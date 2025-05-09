@@ -153,52 +153,80 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
   };
 
   const handleUpdateEmployee = async () => {
-    if (!selectedEmployee) return;
+  if (!selectedEmployee) return;
 
-    setIsUpdating(true);
-    try {
-      if (!validateEmployee(selectedEmployee)) return;
+  setIsUpdating(true);
+  try {
+    if (!validateEmployee(selectedEmployee)) return;
 
-      const payload = {
-        company_id_number: selectedEmployee.company_id_number,
-        birthdate: selectedEmployee.birthdate || null,
-        gender: selectedEmployee.gender === "N/A" ? null : selectedEmployee.gender,
-        address: selectedEmployee.address || "",
-        user_id: selectedEmployee.user_id,
-        department_id: selectedEmployee.department_id,
-        designation_id: selectedEmployee.designation_id,
-        joining_date: selectedEmployee.joining_date || null,
-        contract_type: selectedEmployee.contract_type || null,
-        sss_id: selectedEmployee.sss_id || "",
-        philhealth_id: selectedEmployee.philhealth_id || "",
-        pagibig_id: selectedEmployee.pagibig_id || "",
-        tin: selectedEmployee.tin || "",
-        tax: selectedEmployee.tax || "",
-        dependents: selectedEmployee.dependents || [],
-        education_backgrounds: selectedEmployee.education_backgrounds || [],
-        documents: selectedEmployee.documents || [], // Include documents in the payload
-      };
+    // Deduplicate dependents and education_backgrounds
+    const deduplicateById = <T extends { id?: number }>(items: T[]): T[] => {
+      const seen = new Set<number>();
+      return items.filter((item) => {
+        if (item.id) {
+          if (seen.has(item.id)) return false;
+          seen.add(item.id);
+          return true;
+        }
+        return true; // Keep items without id (new records)
+      });
+    };
 
-      console.log("Update payload:", payload);
+    const payload = {
+      company_id_number: selectedEmployee.company_id_number?? null,
+      birthdate: selectedEmployee.birthdate || null,
+      gender: selectedEmployee.gender === "N/A" ? null : selectedEmployee.gender,
+      address: selectedEmployee.address || "",
+      user_id: selectedEmployee.user_id?? undefined,
+      department_id: selectedEmployee.department_id || undefined, // Avoid sending 0
+      designation_id: selectedEmployee.designation_id || undefined, // Avoid sending 0
+      joining_date: selectedEmployee.joining_date || null,
+      contract_type: selectedEmployee.contract_type || null,
+      sss_id: selectedEmployee.sss_id || "",
+      philhealth_id: selectedEmployee.philhealth_id || "",
+      pagibig_id: selectedEmployee.pagibig_id || "",
+      tin: selectedEmployee.tin || "",
+      tax: selectedEmployee.tax || "",
+      dependents: deduplicateById(selectedEmployee.dependents || []).map(dep => ({
+        id: dep.id,
+        name: dep.name,
+        relationship: dep.relationship
+      })),
+      education_backgrounds: deduplicateById(selectedEmployee.education_backgrounds || []).map(edu => ({
+        id: edu.id,
+        attainment: edu.attainment,
+        course: edu.course
+      })),
+      documents: selectedEmployee.documents || [],
+    };
 
-      await updateEmployee(selectedEmployee.id, payload, token);
+    // Log payload to debug
+    console.log("Update payload (after deduplication):", payload);
 
-      const employees = await fetchEmployees(token);
-      setEmployees(employees);
-
-      setIsViewSheetOpen(false);
-      setSelectedEmployee(null);
-      setIsEditable(false);
-      toast.success("Employee updated successfully");
-      if (userRole === "Employee") toast.info("Your profile has been updated");
-
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update employee");
-      console.error("Update error:", err);
-    } finally {
-      setIsUpdating(false);
+    // Ensure department_id and designation_id are valid before sending
+    if (payload.department_id === 0 || payload.designation_id === 0) {
+      throw new Error("Invalid department or designation ID");
     }
-  };
+
+    const response = await updateEmployee(selectedEmployee.id, payload, token);
+    console.log("Update response:", response);
+
+    const employees = await fetchEmployees(token);
+    setEmployees(employees);
+
+    setIsViewSheetOpen(false);
+    setSelectedEmployee(null);
+    setIsEditable(false);
+    toast.success("Employee updated successfully");
+    if (userRole === "Employee") toast.info("Your profile has been updated");
+
+  } catch (err: any) {
+    toast.error(err.message || "Failed to update employee");
+    console.error("Update error:", err);
+  } finally {
+    setIsUpdating(false);
+  }
+};
 
   const handleDeleteEmployee = async () => {
     if (!selectedEmployee) return;

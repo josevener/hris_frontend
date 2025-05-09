@@ -325,7 +325,7 @@ const UserForm: React.FC<UserFormProps> = ({
             <Button
               onClick={handleSave}
               disabled={isCheckingEmail || isSaving}
-              className="relative"
+              className={isSaving ? "relative w-24" : "relative"}
             >
               {isSaving && (
                 <span className="absolute inset-0 flex items-center justify-center">

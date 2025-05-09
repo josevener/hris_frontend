@@ -5,13 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Edit, X, RefreshCw } from "lucide-react";
+import { Loader2, Edit, RefreshCw } from "lucide-react";
 import { Employee } from "@/types/employee";
 import { Shift, DaySchedule } from "@/types/shift";
 
 interface ShiftFormProps {
   shift: Partial<Shift>;
-  employees: Employee[];
+  employees: Employee[]; // Now contains only employees without shifts
   onChange: (updatedShift: Partial<Shift>) => void;
   onSave: () => void;
   onCancel: () => void;
@@ -53,7 +53,7 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
 
   const currentEmployeeName = () => {
     const employee = employees.find((emp) => emp.id === shift.employee_id);
-    return employee ? getFullName(employee) : `Employee #${shift.employee_id || "Unknown"}`;
+    return employee ? getFullName(employee) : shift.employee_id ? `Employee #${shift.employee_id}` : "No employee selected";
   };
 
   const handleScheduleSettingChange = (day: string, isRestDay: boolean, hours: string) => {
@@ -123,7 +123,7 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
                       </SelectItem>
                     ))
                   ) : (
-                    <SelectItem value="none" disabled>No employees available</SelectItem>
+                    <SelectItem value="none" disabled>No available employees</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -259,24 +259,11 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
                                     {option}
                                   </SelectItem>
                                 ))}
+                                <SelectItem value="Rest Day">Rest Day</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           <div className="flex items-center gap-1">
-                            {!setting.is_rest_day && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  resetDayToRest(day);
-                                }}
-                                className="p-1 hover:bg-gray-200 rounded-full"
-                                title="Mark as Rest Day"
-                              >
-                                <X className="h-4 w-4 text-gray-600" />
-                              </Button>
-                            )}
                             <Label htmlFor={`rest-day-switch-${day}`} className="sr-only">
                               {setting.is_rest_day ? "Unmark Rest Day" : "Mark as Rest Day"} for {day}
                             </Label>
@@ -310,7 +297,7 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
           <Button
             variant="outline"
             onClick={onEditToggle}
-            className="px-4 py-2 text-sm bg-blue-600 text-white flex items-center hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 text-sm bg-gray-900 text-white flex items-center hover:bg-gray-800 hover:text-white transition-colors"
           >
             <Edit className="mr-2 h-4 w-4" /> Edit
           </Button>

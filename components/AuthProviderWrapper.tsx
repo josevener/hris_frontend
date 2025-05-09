@@ -17,7 +17,7 @@ export default function AuthProviderWrapper({
     const fetchAuthData = async () => {
       try {
         const response = await api.get("/api/auth-data");
-        console.log("Fetched auth data:", response.data);
+        // console.log("Fetched auth data:", response.data);
         setToken(response.data.token);
         setUser(response.data.user);
       } catch (error) {

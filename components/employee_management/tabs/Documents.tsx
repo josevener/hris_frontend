@@ -23,7 +23,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
   isEditMode,
   isEditable,
 }) => {
-  const [documents, setDocuments] = useState<{ id?: number; type: string; file: File | null; file_path?: string }[]>(() => {
+  const [documents, setDocuments] = useState<{ id?: number; type: string; file: File | null; file_path?: string; preview?: string }[]>(() => {
     const defaultDocs = [
       { type: "resume", file: null },
       { type: "id_proof", file: null },
@@ -39,6 +39,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
             type: existingDoc.type,
             file: null,
             file_path: existingDoc.file_path,
+            preview: existingDoc.file_path ? `/storage/${existingDoc.file_path}` : undefined,
           };
         }
         return defaultDoc;
@@ -59,6 +60,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
             ...doc,
             id: existingDoc.id,
             file_path: existingDoc.file_path,
+            preview: existingDoc.file_path ? `/storage/${existingDoc.file_path}` : undefined,
           };
         }
         return doc;
@@ -69,7 +71,14 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
 
   const handleFileChange = (type: string, file: File | null) => {
     const updatedDocs = documents.map((doc) =>
-      doc.type === type ? { ...doc, file, file_path: file ? undefined : doc.file_path } : doc
+      doc.type === type
+        ? {
+            ...doc,
+            file,
+            file_path: file ? undefined : doc.file_path,
+            preview: file ? URL.createObjectURL(file) : doc.preview,
+          }
+        : doc
     );
     setDocuments(updatedDocs);
 
@@ -92,7 +101,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
     const docToDelete = documents.find((doc) => doc.type === type && doc.id);
     if (docToDelete && token) {
       try {
-        await deleteDocument(Number(docToDelete.id), token);
+        // await deleteDocument(Number(docToDelete.id), token);
         toast.success("Document deleted successfully");
       } catch (error) {
         toast.error("Failed to delete document");
@@ -101,7 +110,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
     }
 
     const updatedDocs = documents.map((doc) =>
-      doc.type === type ? { ...doc, file: null, file_path: undefined } : doc
+      doc.type === type ? { ...doc, file: null, file_path: undefined, preview: undefined } : doc
     );
 
     setDocuments(updatedDocs);
@@ -119,6 +128,12 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
     setDeletingType(null);
   };
 
+  const isPDF = (fileOrPath: File | string | undefined) => {
+    if (!fileOrPath) return false;
+    const fileName = fileOrPath instanceof File ? fileOrPath.name : fileOrPath.split("/").pop();
+    return fileName?.toLowerCase().endsWith(".pdf");
+  };
+
   return (
     <div className="grid gap-4 py-4 grid-cols-6">
       {documents.map((doc) => (
@@ -130,25 +145,53 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
             {doc.type.replace("_", " ")}
           </Label>
           {doc.file || doc.file_path ? (
-            <div className="flex items-center gap-2">
-              <span className="text-foreground dark:text-foreground truncate max-w-[150px]">
-                {doc.file ? doc.file.name : doc.file_path?.split("/").pop()}
-              </span>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleRemoveFile(doc.type)}
-                disabled={
-                  deletingType === doc.type || (!isEditable && isEditMode) || userRole === "Employee"
-                }
-                className="dark:bg-red-700 dark:hover:bg-red-600"
-              >
-                <Trash2
-                  className={`h-4 w-4 transition-transform ${
-                    deletingType === doc.type ? "animate-spin" : ""
-                  }`}
-                />
-              </Button>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-foreground dark:text-foreground truncate max-w-[150px]">
+                  {doc.file ? doc.file.name : doc.file_path?.split("/").pop()}
+                </span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleRemoveFile(doc.type)}
+                  disabled={
+                    deletingType === doc.type || (!isEditable && isEditMode) || userRole === "Employee"
+                  }
+                  className="dark:bg-red-700 dark:hover:bg-red-600"
+                >
+                  <Trash2
+                    className={`h-4 w-4 transition-transform ${
+                      deletingType === doc.type ? "animate-spin" : ""
+                    }`}
+                  />
+                </Button>
+              </div>
+              {doc.preview && (
+                <div className="mt-2">
+                  {isPDF(doc.file || doc.file_path) ? (
+                    <iframe
+                      src={doc.preview}
+                      title={`${doc.type} preview`}
+                      className="w-full h-[300px] border rounded"
+                    />
+                  ) : doc.file ? (
+                    <img
+                      src={doc.preview}
+                      alt={`${doc.type} preview`}
+                      className="max-w-[200px] max-h-[200px] object-cover rounded"
+                    />
+                  ) : (
+                    <a
+                      href={doc.preview}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 underline"
+                    >
+                      View Document
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <Input
