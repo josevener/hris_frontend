@@ -45,11 +45,19 @@ export const useShiftData = () => {
             fetchEmployeesDoesntHaveShift(token),
           ]);
 
-        const enrichedShifts = shiftData.map((shift) => ({
+        const enrichedShifts = shiftData.map((shift: Shift) => ({
           ...shift,
-          employee: Array.isArray(allEmployeeData)
-            ? allEmployeeData.find((emp) => emp.id === shift.employee_id)
+          employee_ids: Array.isArray(shift.employee_ids)
+            ? shift.employee_ids
+            : [],
+          schedule_settings: shift.schedule_settings || [],
+          employee: Array.isArray(shift.employees)
+            ? shift.employees[0]
             : undefined,
+          isGroupSchedule:
+            shift.isGroupSchedule ??
+            (Array.isArray(shift.employee_ids) &&
+              shift.employee_ids.length > 1),
         }));
 
         setShifts(enrichedShifts);
@@ -75,22 +83,31 @@ export const useShiftData = () => {
     if (!token) throw new Error("No authentication token available");
     try {
       const payload = {
-        employee_id: shift.employee_id,
+        employee_ids: Array.isArray(shift.employee_ids)
+          ? shift.employee_ids
+          : [],
         start_date: shift.start_date,
         end_date: shift.end_date,
         description: shift.description,
         schedule_settings: shift.schedule_settings,
+        isGroupSchedule: shift.isGroupSchedule ?? false,
       };
       const newShift = await createShift(payload, token);
       const updatedShifts = await fetchShifts(token);
       const allEmployeeData = await fetchEmployees(token);
       const employeesWithoutShiftData =
         await fetchEmployeesDoesntHaveShift(token);
-      const enrichedShifts = updatedShifts.map((shift) => ({
+      const enrichedShifts = updatedShifts.map((shift: Shift) => ({
         ...shift,
+        employee_ids: Array.isArray(shift.employee_ids)
+          ? shift.employee_ids
+          : [],
         employee: Array.isArray(allEmployeeData)
-          ? allEmployeeData.find((emp) => emp.id === shift.employee_id)
+          ? allEmployeeData.find((emp) => shift.employee_ids.includes(emp.id))
           : undefined,
+        isGroupSchedule:
+          shift.isGroupSchedule ??
+          (Array.isArray(shift.employee_ids) && shift.employee_ids.length > 1),
       }));
       setShifts(enrichedShifts);
       setAllEmployees(Array.isArray(allEmployeeData) ? allEmployeeData : []);
@@ -111,22 +128,31 @@ export const useShiftData = () => {
     if (!token) throw new Error("No authentication token available");
     try {
       const payload = {
-        employee_id: shift.employee_id,
+        employee_ids: Array.isArray(shift.employee_ids)
+          ? shift.employee_ids
+          : [],
         start_date: shift.start_date,
         end_date: shift.end_date,
         description: shift.description,
         schedule_settings: shift.schedule_settings,
+        isGroupSchedule: shift.isGroupSchedule ?? false,
       };
       await updateShift(id, payload, token);
       const updatedShifts = await fetchShifts(token);
       const allEmployeeData = await fetchEmployees(token);
       const employeesWithoutShiftData =
         await fetchEmployeesDoesntHaveShift(token);
-      const enrichedShifts = updatedShifts.map((shift) => ({
+      const enrichedShifts = updatedShifts.map((shift: Shift) => ({
         ...shift,
+        employee_ids: Array.isArray(shift.employee_ids)
+          ? shift.employee_ids
+          : [],
         employee: Array.isArray(allEmployeeData)
-          ? allEmployeeData.find((emp) => emp.id === shift.employee_id)
+          ? allEmployeeData.find((emp) => shift.employee_ids.includes(emp.id))
           : undefined,
+        isGroupSchedule:
+          shift.isGroupSchedule ??
+          (Array.isArray(shift.employee_ids) && shift.employee_ids.length > 1),
       }));
       setShifts(enrichedShifts);
       setAllEmployees(Array.isArray(allEmployeeData) ? allEmployeeData : []);
@@ -150,11 +176,17 @@ export const useShiftData = () => {
       const allEmployeeData = await fetchEmployees(token);
       const employeesWithoutShiftData =
         await fetchEmployeesDoesntHaveShift(token);
-      const enrichedShifts = updatedShifts.map((shift) => ({
+      const enrichedShifts = updatedShifts.map((shift: Shift) => ({
         ...shift,
+        employee_ids: Array.isArray(shift.employee_ids)
+          ? shift.employee_ids
+          : [],
         employee: Array.isArray(allEmployeeData)
-          ? allEmployeeData.find((emp) => emp.id === shift.employee_id)
+          ? allEmployeeData.find((emp) => shift.employee_ids.includes(emp.id))
           : undefined,
+        isGroupSchedule:
+          shift.isGroupSchedule ??
+          (Array.isArray(shift.employee_ids) && shift.employee_ids.length > 1),
       }));
       setShifts(enrichedShifts);
       setAllEmployees(Array.isArray(allEmployeeData) ? allEmployeeData : []);

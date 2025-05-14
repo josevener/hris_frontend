@@ -1,3 +1,5 @@
+"use client";
+
 import { DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,10 +10,12 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2, Edit, RefreshCw } from "lucide-react";
 import { Employee } from "@/types/employee";
 import { Shift, DaySchedule } from "@/types/shift";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useState } from "react";
 
 interface ShiftFormProps {
   shift: Partial<Shift>;
-  employees: Employee[]; // Now contains only employees without shifts
+  employees: Employee[];
   onChange: (updatedShift: Partial<Shift>) => void;
   onSave: () => void;
   onCancel: () => void;
@@ -32,12 +36,12 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
   isViewMode = false,
   onEditToggle,
 }) => {
-  const isReadOnly: boolean = !isEditMode && isViewMode;
+  const isReadOnly = !isEditMode && isViewMode;
+  const isGroupSchedule = shift.isGroupSchedule ?? false;
 
   const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const hourOptions = ["8hrs fixed", "4hrs fixed"];
 
-  // Initialize schedule settings if not present
   const scheduleSettings: DaySchedule[] = shift.schedule_settings || daysOfWeek.map((day) => ({
     day,
     is_rest_day: false,
@@ -51,9 +55,13 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
       : `Employee #${employee.id}`;
   };
 
-  const currentEmployeeName = () => {
-    const employee = employees.find((emp) => emp.id === shift.employee_id);
-    return employee ? getFullName(employee) : shift.employee_id ? `Employee #${shift.employee_id}` : "No employee selected";
+  const currentEmployeesNames = () => {
+    const selectedEmployees = employees.filter((emp) => shift.employee_ids?.includes(emp.id));
+    return selectedEmployees.length > 0
+      ? selectedEmployees.map(getFullName).join(", ")
+      : shift.employee_ids?.length
+      ? `Employee #${shift.employee_ids.join(", #")}`
+      : "No employees selected";
   };
 
   const handleScheduleSettingChange = (day: string, isRestDay: boolean, hours: string) => {
@@ -64,10 +72,6 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
       return setting;
     });
     onChange({ ...shift, schedule_settings: updatedSettings });
-  };
-
-  const resetDayToRest = (day: string) => {
-    handleScheduleSettingChange(day, true, "Rest Day");
   };
 
   const toggleAllRestDays = (isRestDay: boolean) => {
@@ -88,11 +92,80 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
     onChange({ ...shift, schedule_settings: updatedSettings });
   };
 
+  const handleEmployeeSelect = (employeeId: string) => {
+    const id = Number(employeeId);
+    let updatedIds = Array.isArray(shift.employee_ids) ? [...shift.employee_ids] : [];
+
+    if (isGroupSchedule) {
+      // Group mode: Allow multiple selections
+      updatedIds = updatedIds.includes(id)
+        ? updatedIds.filter((eid) => eid !== id)
+        : [...updatedIds, id];
+    } else {
+      // Single mode: Allow only one selection
+      updatedIds = updatedIds.includes(id) ? [] : [id];
+    }
+
+    onChange({ ...shift, employee_ids: updatedIds });
+  };
+
+  const handleGroupScheduleToggle = (checked: boolean) => {
+    const currentIds = Array.isArray(shift.employee_ids) ? [...shift.employee_ids] : [];
+    // If switching to single mode and more than one employee is selected, keep only the first
+    const updatedIds = checked || currentIds.length <= 1 ? currentIds : [currentIds[0]];
+    onChange({ ...shift, isGroupSchedule: checked, employee_ids: updatedIds });
+  };
+
+  // Custom multi-select component to keep dropdown open
+  const MultiSelect = ({ value, onChange, options }: { value: number[], onChange: (ids: number[]) => void, options: Employee[] }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-full border border-gray-300 rounded-md p-2 text-left"
+        >
+          {value.length > 0 ? value.map(id => getFullName(options.find(emp => emp.id === id) || { id } as Employee)).join(", ") : "Select employees"}
+        </button>
+        {isOpen && (
+          <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-auto">
+            {options.map((employee) => (
+              <div
+                key={employee.id}
+                className="flex items-center p-2 hover:bg-gray-100 cursor-pointer"
+                onClick={() => {
+                  handleEmployeeSelect(employee.id.toString());
+                  // Do not close the dropdown
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={shift.employee_ids?.includes(employee.id) || false}
+                  onChange={() => {}}
+                  className="mr-2"
+                />
+                {getFullName(employee)}
+              </div>
+            ))}
+            <button
+              onClick={() => setIsOpen(false)}
+              className="w-full p-2 text-center bg-gray-200 hover:bg-gray-300"
+            >
+              Close
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <DialogContent className="max-w-[75vw] w-[1200px] shadow-lg rounded-lg">
       <DialogHeader className="mb-6">
         <DialogTitle className="text-3xl font-bold text-center text-gray-800">
-          {isViewMode ? "View Shift Schedule" : isEditMode ? "Edit Shift Adjustment" : "Create Shift Adjustment"}
+          {isViewMode ? "View Shift Schedule" : isEditMode ? "Edit Shift Schedule" : "Create Shift Schedule"}
         </DialogTitle>
         <DialogDescription className="text-sm text-center text-gray-500">
           Fill up the required information to manage shifts.
@@ -100,37 +173,58 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
       </DialogHeader>
       <div className="flex flex-row gap-8 py-4">
         <div className="flex flex-col gap-4 w-1/2">
-          {/* Employee Select */}
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="group-schedule"
+              checked={isGroupSchedule}
+              onCheckedChange={handleGroupScheduleToggle}
+              disabled={isReadOnly}
+            />
+            <Label htmlFor="group-schedule" className="text-sm font-semibold text-gray-700">
+              Batch/Group Schedule (Optional)
+            </Label>
+          </div>
+
           <div className="flex flex-col gap-2">
-            <Label htmlFor="employee" className="text-sm font-semibold text-gray-700">
-              Employee <span className="text-red-500">*</span>
+            <Label htmlFor="employees" className="text-sm font-semibold text-gray-700">
+              {isGroupSchedule ? "Employees" : "Employee"} <span className="text-red-500">*</span>
             </Label>
             {isReadOnly ? (
-              <Input value={currentEmployeeName()} readOnly className="w-full border-gray-300 rounded-md" />
+              <Input value={currentEmployeesNames()} readOnly className="w-full border-gray-300 rounded-md" />
             ) : (
-              <Select
-                onValueChange={(value) => onChange({ ...shift, employee_id: Number(value) })}
-                value={shift.employee_id ? shift.employee_id.toString() : ""}
-              >
-                <SelectTrigger className="w-full border-gray-300 rounded-md">
-                  <SelectValue placeholder="Choose an employee" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.length > 0 ? (
-                    employees.map((employee) => (
-                      <SelectItem key={employee.id} value={employee.id.toString()}>
-                        {getFullName(employee)}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="none" disabled>No available employees</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
+              isGroupSchedule ? (
+                <MultiSelect
+                  value={shift.employee_ids || []}
+                  onChange={(ids) => onChange({ ...shift, employee_ids: ids })}
+                  options={employees}
+                />
+              ) : (
+                <Select
+                  onValueChange={handleEmployeeSelect}
+                  value={shift.employee_ids?.[0]?.toString() || ""}
+                >
+                  <SelectTrigger className="w-full border-gray-300 rounded-md">
+                    <SelectValue placeholder="Select an employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.length > 0 ? (
+                      employees.map((employee) => (
+                        <SelectItem
+                          key={employee.id}
+                          value={employee.id.toString()}
+                        >
+                          {getFullName(employee)}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="none" disabled>No available employees</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )
             )}
           </div>
 
-          {/* Start Date and End Date */}
           <div className="flex flex-col gap-2">
             <Label className="text-sm font-semibold text-gray-700">
               Schedule Period <span className="text-red-500">*</span>
@@ -161,7 +255,6 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
             </div>
           </div>
 
-          {/* Description (Textarea) */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="description" className="text-sm font-semibold text-gray-700">
               Description <span className="text-red-500">*</span>
@@ -178,7 +271,7 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
                 id="description"
                 value={shift.description || ""}
                 onChange={(e) => onChange({ ...shift, description: e.target.value })}
-                placeholder="Provide details about the shift adjustment..."
+                placeholder="Provide details about the shift..."
                 className="w-full h-24 resize-none border-gray-300 rounded-md"
               />
             )}
@@ -186,7 +279,6 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
         </div>
 
         <div className="flex-1">
-          {/* Schedule Settings */}
           <div className="flex flex-col gap-4">
             <div className="flex justify-between items-center">
               <div>

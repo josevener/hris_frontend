@@ -1,5 +1,5 @@
 import { Employee } from "@/types/employee";
-import { Shift, DaySchedule } from "../../types/shift";
+import { Shift, PartialShift } from "../../types/shift";
 
 const BASE_URL = "http://127.0.0.1:8000/api";
 
@@ -37,43 +37,35 @@ const apiFetch = async <T>(
     throw error;
   }
 
-  // Handle 204 No Content responses
   if (response.status === 204) {
-    return undefined as T; // No content to parse, return undefined
+    return undefined as T;
   }
 
   return response.json();
 };
 
-// Fetch all shifts
 export const fetchShifts = async (token: string | null): Promise<Shift[]> => {
   const response = await apiFetch<any>("/shifts", "GET", token);
   return response.shifts.map((shift: any) => ({
     ...shift,
+    employee_ids: Array.isArray(shift.employee_ids) ? shift.employee_ids : [],
     schedule_settings: shift.schedule_settings || [],
+    employees: shift.employees || [],
+    isGroupSchedule:
+      shift.isGroupSchedule ??
+      (Array.isArray(shift.employee_ids) && shift.employee_ids.length > 1),
   }));
 };
 
-// Fetch a single shift by ID
-export const fetchShift = async (
-  id: number,
-  token: string | null
-): Promise<Shift> => {
-  const response = await apiFetch<any>(`/shifts/${id}`, "GET", token);
-  return {
-    ...response.shift,
-    schedule_settings: response.shift.schedule_settings || [],
-  };
-};
-
-// Create a new shift
 export const createShift = async (
-  data: Partial<Shift>,
+  data: PartialShift,
   token: string | null
 ): Promise<Shift> => {
   const normalizedData = {
     ...data,
+    employee_ids: Array.isArray(data.employee_ids) ? data.employee_ids : [],
     schedule_settings: data.schedule_settings || [],
+    isGroupSchedule: data.isGroupSchedule ?? false,
   };
 
   console.log("Create Shift Payload:", normalizedData);
@@ -85,22 +77,31 @@ export const createShift = async (
     normalizedData,
     false
   );
-
   if (!response.shift) {
     throw new Error("Invalid server response: 'shift' object missing");
   }
-  return response.shift;
+  return {
+    ...response.shift,
+    employee_ids: Array.isArray(response.shift.employee_ids)
+      ? response.shift.employee_ids
+      : [],
+    isGroupSchedule:
+      response.shift.isGroupSchedule ??
+      (Array.isArray(response.shift.employee_ids) &&
+        response.shift.employee_ids.length > 1),
+  };
 };
 
-// Update an existing shift
 export const updateShift = async (
   id: number,
-  data: Partial<Shift>,
+  data: PartialShift,
   token: string | null
 ): Promise<Shift> => {
   const normalizedData = {
     ...data,
+    employee_ids: Array.isArray(data.employee_ids) ? data.employee_ids : [],
     schedule_settings: data.schedule_settings || [],
+    isGroupSchedule: data.isGroupSchedule ?? false,
   };
 
   console.log("Update Shift Payload:", normalizedData);
@@ -112,14 +113,21 @@ export const updateShift = async (
     normalizedData,
     false
   );
-
   if (!response.shift) {
     throw new Error("Invalid server response: 'shift' object missing");
   }
-  return response.shift;
+  return {
+    ...response.shift,
+    employee_ids: Array.isArray(response.shift.employee_ids)
+      ? response.shift.employee_ids
+      : [],
+    isGroupSchedule:
+      response.shift.isGroupSchedule ??
+      (Array.isArray(response.shift.employee_ids) &&
+        response.shift.employee_ids.length > 1),
+  };
 };
 
-// Delete a shift
 export const deleteShift = (id: number, token: string | null): Promise<void> =>
   apiFetch<void>(`/shifts/${id}`, "DELETE", token);
 
@@ -131,7 +139,7 @@ export const fetchEmployeesDoesntHaveShift = async (
     "GET",
     token
   );
-  const employees = response.employees || []; // Fallback to empty array if undefined
+  const employees = response.employees || [];
   if (!Array.isArray(employees)) {
     throw new Error("Invalid API response: 'employees' is not an array");
   }

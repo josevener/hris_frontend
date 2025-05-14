@@ -28,7 +28,7 @@ export const PayslipHeader: React.FC<PayslipHeaderProps> = ({ company }) => {
           </p>
         </div>
         <img
-          src="/assets/images/bfd.jpg"
+          src="/assets/images/bfd_logo.png"
           alt="Company Logo"
           className="h-32 w-32 object-contain"
         />

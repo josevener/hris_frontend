@@ -21,7 +21,7 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [newShift, setNewShift] = useState<Partial<Shift>>({
-    employee_id: undefined,
+    employee_ids: [],
     start_date: "",
     end_date: "",
     description: "",
@@ -34,14 +34,19 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
       { day: "Friday", is_rest_day: false, hours: "8hrs fixed" },
       { day: "Saturday", is_rest_day: false, hours: "8hrs fixed" },
     ],
+    isGroupSchedule: false, // Default to single employee
   });
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 
   const validateShift = (shift: Partial<Shift>): boolean => {
-    if (!shift.employee_id || shift.employee_id === 0) {
-      toast.error("Employee is required.");
+    if (!shift.employee_ids || shift.employee_ids.length === 0) {
+      toast.error("At least one employee is required.");
+      return false;
+    }
+    if (!shift.isGroupSchedule && shift.employee_ids.length > 1) {
+      toast.error("Single employee schedule can only have one employee.");
       return false;
     }
     if (!shift.start_date) {
@@ -69,10 +74,6 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
         toast.error(`Hours must be specified for ${setting.day} if it is not a rest day.`);
         return false;
       }
-      if (setting.hours === "Custom" && !setting.hours.match(/^\d+hrs$/)) {
-        toast.error(`Custom hours for ${setting.day} must be in the format "Xhrs" (e.g., "6hrs").`);
-        return false;
-      }
     }
     return true;
   };
@@ -84,7 +85,7 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
       await addShift(newShift);
       setIsAddModalOpen(false);
       setNewShift({
-        employee_id: undefined,
+        employee_ids: [],
         start_date: "",
         end_date: "",
         description: "",
@@ -97,10 +98,11 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
           { day: "Friday", is_rest_day: false, hours: "8hrs fixed" },
           { day: "Saturday", is_rest_day: false, hours: "8hrs fixed" },
         ],
+        isGroupSchedule: false,
       });
-      toast.success("Schedule added successfully");
+      toast.success("Shift schedule added successfully");
     } catch (err) {
-      toast.error("Failed to add schedule");
+      toast.error("Failed to add shift schedule");
       console.error("Add error:", err);
     } finally {
       setIsSaving(false);
@@ -111,13 +113,13 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
     if (!selectedShift || !validateShift(selectedShift)) return;
     setIsSaving(true);
     try {
-      await editShift(selectedShift.id, selectedShift);
+      await editShift(Number(selectedShift.id), selectedShift);
       setIsDetailModalOpen(false);
       setSelectedShift(null);
       setIsEditMode(false);
-      toast.success("Schedule updated successfully");
+      toast.success("Shift schedule updated successfully");
     } catch (err) {
-      toast.error("Failed to update schedule");
+      toast.error("Failed to update shift schedule");
       console.error("Update error:", err);
     } finally {
       setIsSaving(false);
@@ -128,12 +130,12 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
     if (!selectedShift) return;
     setIsDeleting(true);
     try {
-      await removeShift(selectedShift.id);
+      await removeShift(Number(selectedShift.id));
       setIsDeleteModalOpen(false);
       setSelectedShift(null);
-      toast.success("Schedule deleted successfully");
+      toast.success("Shift schedule deleted successfully");
     } catch (err) {
-      toast.error("Failed to delete schedule");
+      toast.error("Failed to delete shift schedule");
       console.error("Delete error:", err);
     } finally {
       setIsDeleting(false);
@@ -141,7 +143,7 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
   };
 
   const handleView = (shift: Shift) => {
-    setSelectedShift(shift);
+    setSelectedShift({ ...shift, employee_ids: shift.employee_ids || [], isGroupSchedule: shift.isGroupSchedule ?? shift.employee_ids.length > 1 });
     setIsEditMode(false);
     setIsDetailModalOpen(true);
   };
@@ -155,8 +157,12 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
     if (searchTerm) {
       result = result.filter((shift) =>
         [
-          shift.employee?.user?.lastname || "",
-          shift.employee?.user?.firstname || "",
+          shift.employee_ids
+            .map((id) => allEmployees.find((emp) => emp.id === id)?.user?.lastname || "")
+            .join(" "),
+          shift.employee_ids
+            .map((id) => allEmployees.find((emp) => emp.id === id)?.user?.firstname || "")
+            .join(" "),
           shift.start_date || "",
           shift.end_date || "",
           shift.description || "",
@@ -168,7 +174,7 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
       );
     }
     return result;
-  }, [shifts, searchTerm]);
+  }, [shifts, searchTerm, allEmployees]);
 
   return (
     <div className="p-6 flex flex-col items-center bg-background text-foreground">
@@ -183,7 +189,7 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
           />
           {(userRole === "HR" || userRole === "Admin") && (
             <Button onClick={() => setIsAddModalOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Add Schedule
+              <Plus className="mr-2 h-4 w-4" /> Add Shift Schedule
             </Button>
           )}
         </div>
@@ -200,6 +206,7 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
         }}
         handleView={handleView}
         userRole={userRole}
+        allEmployees={allEmployees}
       />
 
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
@@ -223,7 +230,7 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
         {selectedShift && (
           <ShiftForm
             shift={selectedShift}
-            employees={allEmployees} // Use allEmployees for view/edit to show the actual assigned employee
+            employees={allEmployees}
             onChange={(updatedShift) => setSelectedShift(updatedShift as Shift)}
             onSave={handleUpdateShift}
             onCancel={() => setIsDetailModalOpen(false)}

@@ -4,31 +4,30 @@ import { UserRole } from "@/types/employee";
 import ShiftActions from "./ShiftActions";
 import { Shift } from "@/types/shift";
 import { format } from "date-fns";
+import { Employee } from "@/types/employee";
 
 interface ShiftTableProps {
   shifts: Shift[];
   loading: boolean;
-  // handleEdit: (shift: Shift) => void;
   handleDelete: (shift: Shift) => void;
   handleView: (shift: Shift) => void;
   userRole: UserRole;
+  allEmployees: Employee[];
 }
 
 const ShiftTable: React.FC<ShiftTableProps> = ({
   shifts,
   loading,
-  // handleEdit,
   handleDelete,
   handleView,
   userRole,
+  allEmployees,
 }) => {
-  const getFullName = (shift: Shift): string => {
-    const employee = shift.employee;
-    if (!employee || !employee.user) {
-      return `Employee #${shift.employee_id || "Unknown"}`;
-    }
-    const { user } = employee;
-    return `${user.firstname} ${user.middlename ? user.middlename[0] + "." : ""} ${user.lastname} ${user.extension || ""}`.trim();
+  const getFullName = (employeeId: number): string => {
+    const employee = allEmployees.find((emp) => emp.id === employeeId);
+    return employee
+      ? `${employee.user?.firstname} ${employee.user?.middlename ? employee.user.middlename[0] + "." : ""} ${employee.user?.lastname} ${employee.user?.extension || ""}`.trim()
+      : `Employee #${employeeId}`;
   };
 
   const formatDate = (date: string): string => {
@@ -38,9 +37,7 @@ const ShiftTable: React.FC<ShiftTableProps> = ({
   const formatScheduleSettings = (settings: Shift["schedule_settings"]): string => {
     if (!settings || settings.length === 0) return "N/A";
     return settings
-      .map((setting) =>
-        setting.is_rest_day ? `${setting.day}: Rest Day` : `${setting.day}: ${setting.hours}`
-      )
+      .map((setting) => (setting.is_rest_day ? `${setting.day}: Rest Day` : `${setting.day}: ${setting.hours}`))
       .join(", ");
   };
 
@@ -49,7 +46,7 @@ const ShiftTable: React.FC<ShiftTableProps> = ({
       <TableHeader>
         <TableRow className="dark:bg-gray-700">
           <TableHead className="w-[50px] dark:text-gray-200">ID</TableHead>
-          <TableHead className="dark:text-gray-200">Employee</TableHead>
+          <TableHead className="dark:text-gray-200">Employees</TableHead>
           <TableHead className="dark:text-gray-200">Schedule Period</TableHead>
           <TableHead className="dark:text-gray-200">Description</TableHead>
           <TableHead className="dark:text-gray-200">Schedule Settings</TableHead>
@@ -72,7 +69,12 @@ const ShiftTable: React.FC<ShiftTableProps> = ({
           shifts.map((shift, index) => (
             <TableRow key={shift.id} className="dark:bg-gray-800 dark:hover:bg-gray-700">
               <TableCell className="dark:text-gray-200">{index + 1}</TableCell>
-              <TableCell className="dark:text-gray-200">{getFullName(shift)}</TableCell>
+              <TableCell className="dark:text-gray-200">
+                {Array.isArray(shift.employee_ids) && shift.employee_ids.length > 0
+                  ? (shift.employee_ids.length > 1 ? "Group Employees: " : "") +
+                    shift.employee_ids.map((id) => getFullName(id)).join(", ")
+                  : "No employees assigned"}
+              </TableCell>
               <TableCell className="dark:text-gray-200">
                 {shift.start_date && shift.end_date
                   ? `${formatDate(shift.start_date)} - ${formatDate(shift.end_date)}`

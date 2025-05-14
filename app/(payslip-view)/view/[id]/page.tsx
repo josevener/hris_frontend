@@ -390,15 +390,25 @@ export default function PayslipViewPage() {
         </div>
 
         {/* Payslip Content */}
-        <div ref={payslipRef} className="w-full space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <PayslipHeader company={company} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <EmployeeInfo payslip={payslip} />
-            <PayrollMetadata payslip={payslip} />
+        <div ref={payslipRef} className="relative w-full space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 overflow-hidden">
+          {/* Content */}
+          <div className="space-y-6 relative z-10">
+            <PayslipHeader company={company} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <EmployeeInfo payslip={payslip} />
+              <PayrollMetadata payslip={payslip} />
+            </div>
+            <EarningsTable payslip={payslip} earningsItems={earningsItems} formatCurrency={formatCurrency} />
+            <DeductionsTable payslip={payslip} deductionsItems={deductionsItems} formatCurrency={formatCurrency} />
+            <PayslipFooter payslip={payslip} />
           </div>
-          <EarningsTable payslip={payslip} earningsItems={earningsItems} formatCurrency={formatCurrency} />
-          <DeductionsTable payslip={payslip} deductionsItems={deductionsItems} formatCurrency={formatCurrency} />
-          <PayslipFooter payslip={payslip} />
+
+          {/* Watermark - perfectly centered and in front */}
+          <img
+            src="/assets/images/bfd.jpg"
+            alt="Watermark"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 max-w-lg opacity-10 pointer-events-none object-contain z-20 filter grayscale"
+          />
         </div>
       </div>
     </div>
