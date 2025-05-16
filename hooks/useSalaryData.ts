@@ -6,9 +6,10 @@ import {
   updateSalary,
 } from "@/services/api/apiSalary";
 import { fetchEmployees } from "@/services/api/apiEmployee"; // Use all employees
-import { Employee, Salary } from "@/types/salary";
+import { Salary } from "@/types/salary";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import { Employee } from "@/types/employee";
 
 export const useSalaryData = () => {
   const [salaries, setSalaries] = useState<Salary[]>([]);

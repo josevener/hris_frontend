@@ -3,12 +3,14 @@
 import * as React from "react";
 import {
   AudioWaveform,
-  BookOpen,
-  Bot,
+  BookIcon,
   Command,
+  DollarSign,
   GalleryVerticalEnd,
   Settings2,
   SquareTerminal,
+  Users2,
+  UserSquare,
 } from "lucide-react";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
@@ -45,16 +47,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {
           title: "User Management",
           url: "/users",
-          icon: Bot,
+          icon: UserSquare,
           items: [
             { title: "Users", url: "/users" },
             { title: "Activity Log", url: "/users/activity-log" },
           ],
         },
         {
-          title: "Employee Management",
+          title: "Teams",
           url: "/employees",
-          icon: BookOpen,
+          icon: Users2,
           items: [
             { title: "Employees", url: "/employees" },
             { title: "Attendance", url: "/employees/attendance" },
@@ -63,9 +65,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           ],
         },
         {
-          title: "Payroll Management",
+          title: "Hire",
+          url: "/hire",
+          icon: BookIcon,
+          items: [
+            { title: "Hiring", url: "/hiring" },
+            { title: "Onboarding", url: "/onboarding" },
+            { title: "Hiring Handbook", url: "/hiring-handbook" },
+          ],
+        },
+        {
+          title: "Finance",
           url: "/payroll",
-          icon: BookOpen,
+          icon: DollarSign,
           items: [
             { title: "Payroll", url: "/payroll" },
             { title: "Payroll Items", url: "/payroll/items" },

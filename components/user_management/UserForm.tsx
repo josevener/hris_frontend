@@ -328,7 +328,7 @@ const UserForm: React.FC<UserFormProps> = ({
               className={isSaving ? "relative w-24" : "relative"}
             >
               {isSaving && (
-                <span className="absolute inset-0 flex items-center justify-center">
+                <span className="absolute inset-0 flex items-center justify-center gap-1">
                   <Loader2 className="h-5 w-5 animate-spin text-white" /> Saving...
                 </span>
               )}

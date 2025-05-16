@@ -6,9 +6,9 @@ import {
 } from "@/services/api/apiAttendance";
 import { fetchEmployees } from "@/services/api/apiEmployee";
 import { Attendance } from "@/types/attendance";
-import { Employee } from "@/types/salary";
 import { toast } from "sonner";
 import { getCookie } from "@/lib/auth";
+import { Employee } from "@/types/employee";
 
 export const useAttendanceData = () => {
   const [attendances, setAttendances] = useState<Attendance[]>([]);

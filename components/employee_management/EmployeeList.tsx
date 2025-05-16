@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Sheet } from "@/components/ui/sheet";
 import { Toaster, toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, UserCheck, UserPlus, Users, UserX } from "lucide-react";
 import EmployeeForm from "./EmployeeForm";
 import DeleteConfirmation from "./DeleteConfirmation";
 import { Employee, SortKey, UserRole } from "@/types/employee";
@@ -15,6 +15,7 @@ import { useEmployeeData } from "@/hooks/useEmployeeData";
 import { createEmployee, deleteEmployee, fetchEmployees, fetchEmployee, updateEmployee } from "@/services/api/apiEmployee";
 import { EmployeeTable } from "./EmployeeTable";
 import { useAuth } from "@/lib/AuthContext";
+import { EmployeeAnalytics } from "./EmployeeAnalytics";
 
 const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => {
   const { employees, users, departments, designations, loading: dataLoading, error, setEmployees, setUsers } = useEmployeeData();
@@ -140,6 +141,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       toast.success("Employee added successfully");
       if (userRole === "Employee") toast.info("Your profile has been submitted for review");
     
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       const errorMessage =
         err.response?.data?.errors?.company_id_number?.[0] ||
@@ -220,6 +222,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
     toast.success("Employee updated successfully");
     if (userRole === "Employee") toast.info("Your profile has been updated");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     toast.error(err.message || "Failed to update employee");
     console.error("Update error:", err);
@@ -240,6 +243,7 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       setSelectedEmployee(null);
       toast.success("Employee deleted successfully");
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to delete employee");
       console.error("Delete error:", err);
@@ -255,6 +259,8 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       setSelectedEmployee(fullEmployeeData);
       setIsViewSheetOpen(true);
       setIsEditable(false);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error("Failed to load employee details");
       console.error("View profile error:", err);
@@ -324,10 +330,10 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
   const totalPages = Math.ceil(filteredAndSortedEmployees.length / itemsPerPage);
 
   return (
-    <div className="p-6 flex flex-col items-center bg-background text-foreground dark:bg-gray-900 dark:text-foreground">
+    <div className="flex flex-col items-center bg-background text-foreground dark:bg-gray-900 dark:text-foreground">
       <Toaster position="top-right" richColors />
       <div className="w-full max-w-6xl mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Employee Management</h1>
+        <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Employee</h1>
         <div className="flex gap-4">
           <Input
             placeholder="Search employees..."
@@ -358,6 +364,35 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       </div>
 
       {error && <div className="text-red-500 mb-4 dark:text-red-400">{error}</div>}
+      
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <EmployeeAnalytics 
+          icon={<Users className="h-8 w-8 text-blue-500" />} 
+          labelCount={employees.length} 
+          labelTitle="Total Employees" />
+        
+        <EmployeeAnalytics 
+          icon={<UserCheck className="h-8 w-8 text-green-500" />} 
+          labelCount={
+            employees.filter((emp) => emp.user && emp.user.is_active > 0).length
+          }
+          labelTitle="Active Employees" />
+        
+        <EmployeeAnalytics 
+          icon={<UserX className="h-8 w-8 text-red-500" />} 
+          labelCount={
+            employees.filter((emp) => emp.user && emp.user.is_active == 0).length
+          }
+          labelTitle="Inactive Employees" />
+        
+        <EmployeeAnalytics 
+          icon={<UserPlus className="h-8 w-8 text-yellow-500" />} 
+          labelCount={
+            employees.filter((emp) => emp.user && emp.user.employment_status === "onboarding").length
+          }
+          spanCount="" 
+          labelTitle="Onboarding Employees" />
+      </div>
 
       <EmployeeTable
         employees={paginatedEmployees}

@@ -117,7 +117,7 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
   };
 
   // Custom multi-select component to keep dropdown open
-  const MultiSelect = ({ value, onChange, options }: { value: number[], onChange: (ids: number[]) => void, options: Employee[] }) => {
+  const MultiSelect = ({ value, options }: { value: number[], onChange: (ids: number[]) => void, options: Employee[] }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (

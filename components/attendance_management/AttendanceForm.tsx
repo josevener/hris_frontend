@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { Attendance } from "@/types/attendance";
-import { Employee } from "@/types/salary";
+import { Employee } from "@/types/employee";
 
 interface AttendanceFormProps {
   attendance: Partial<Attendance>;

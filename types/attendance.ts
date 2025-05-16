@@ -1,4 +1,4 @@
-import { Employee } from "./salary";
+import { Employee } from "./employee";
 
 export interface Attendance {
   id: number;

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { Employee, UserRole } from "@/types/employee";
 import { getCookie } from "@/lib/auth";
-import { deleteDocument } from "@/services/api/apiEmployee";
+// import { deleteDocument } from "@/services/api/apiEmployee";
 import { toast } from "sonner";
 
 interface DocumentsTabProps {

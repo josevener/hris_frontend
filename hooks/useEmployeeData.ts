@@ -9,7 +9,7 @@ import {
   fetchDepartments,
   fetchDesignations,
 } from "../services/api/apiEmployee";
-import { useAuth } from "@/lib/AuthContext"; // Adjust path
+import { useAuth } from "@/lib/AuthContext";
 
 interface UseEmployeeData {
   employees: Employee[];

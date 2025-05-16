@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
-import { Employee, Salary } from "@/types/salary";
+import { Salary } from "@/types/salary";
 import { FormEvent } from "react";
+import { Employee } from "@/types/employee";
 
 interface SalaryFormProps {
   salary: Partial<Salary>;

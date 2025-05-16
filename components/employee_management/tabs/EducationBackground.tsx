@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Employee, UserRole } from "@/types/employee";
-import { deleteEducationBackground } from "@/services/api/apiEmployee";
-import { getCookie } from "@/lib/auth";
+// import { deleteEducationBackground } from "@/services/api/apiEmployee";
+// import { getCookie } from "@/lib/auth";
 
 interface EducationBackgroundTabProps {
   employee: Partial<Employee>;

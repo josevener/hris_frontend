@@ -1,4 +1,5 @@
-import { Employee, Salary } from "@/types/salary";
+import { Employee } from "@/types/employee";
+import { Salary } from "@/types/salary";
 
 const BASE_URL = "http://127.0.0.1:8000/api";
 

@@ -5,6 +5,8 @@ import { Skeleton } from "../ui/skeleton";
 import { Employee, SortKey, UserRole } from "@/types/employee";
 import EmployeeActions from "./EmployeeActions";
 import { useMemo } from "react";
+import type { VariantProps } from "class-variance-authority"
+import { badgeVariants } from "@/components/ui/badge"
 
 interface EmployeeTableProps {
   employees: Employee[];
@@ -38,16 +40,16 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
       ? `${employee.user.firstname} ${employee.user.middlename ? employee.user.middlename[0] + "." : ""} ${employee.user.lastname}`.trim()
       : "N/A";
 
-  const getSupervisorName = (reportsTo: string | null) =>
-    !reportsTo || reportsTo === "none"
-      ? "None"
-      : employees.find((e) => e.user_id === parseInt(reportsTo))?.user
-      ? `${employees.find((e) => e.user_id === parseInt(reportsTo))!.user!.firstname} ${
-          employees.find((e) => e.user_id === parseInt(reportsTo))!.user!.middlename
-            ? employees.find((e) => e.user_id === parseInt(reportsTo))!.user!.middlename[0] + "."
-            : ""
-        } ${employees.find((e) => e.user_id === parseInt(reportsTo))!.user!.lastname}`.trim()
-      : "N/A";
+  // const getSupervisorName = (reportsTo: string | null) =>
+  //   !reportsTo || reportsTo === "none"
+  //     ? "None"
+  //     : employees.find((e) => e.user_id === parseInt(reportsTo))?.user
+  //     ? `${employees.find((e) => e.user_id === parseInt(reportsTo))!.user!.firstname} ${
+  //         employees.find((e) => e.user_id === parseInt(reportsTo))!.user!.middlename
+  //           ? employees.find((e) => e.user_id === parseInt(reportsTo))!.user!.middlename[0] + "."
+  //           : ""
+  //       } ${employees.find((e) => e.user_id === parseInt(reportsTo))!.user!.lastname}`.trim()
+  //     : "N/A";
 
   const getRoleVariant = (role: UserRole | undefined) => {
     switch (role) {
@@ -61,6 +63,28 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         return "destructive"; // For undefined or unexpected roles
     }
   };
+  
+  type BadgeVariant = VariantProps<typeof badgeVariants>["variant"]
+  
+  function getEmploymentStatusVariant(status?: string): BadgeVariant {
+    switch (status) {
+      case "active":
+        return "outline-success"
+      case "resigned":
+      case "terminated":
+      case "deceased":
+        return "outline-destructive"
+      case "on_leave":
+      case "suspended":
+        return "outline-warning"
+      case "pending_onboarding":
+        return "outline-info"
+      case "retired":
+        return "secondary"
+      default:
+        return "secondary"
+    }
+  }
 
   const renderKey = useMemo(() => Date.now(), []);
 
@@ -82,7 +106,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
             className="cursor-pointer text-foreground dark:text-foreground"
             onClick={() => handleSort("designation.designation")}
           >
-            Designation <SortIcon column="designation.designation" />
+            Job Title <SortIcon column="designation.designation" />
           </TableHead>
           <TableHead
             className="cursor-pointer text-foreground dark:text-foreground"
@@ -90,8 +114,9 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
           >
             Department <SortIcon column="department.department" />
           </TableHead>
-          <TableHead className="text-foreground dark:text-foreground">Supervisor</TableHead>
+          {/* <TableHead className="text-foreground dark:text-foreground">Supervisor</TableHead> */}
           <TableHead className="text-foreground dark:text-foreground">Birth Date</TableHead>
+          <TableHead className="text-foreground dark:text-foreground">Status</TableHead>
           <TableHead className="text-foreground dark:text-foreground">Role</TableHead>
           <TableHead className="w-[100px] text-center text-foreground dark:text-foreground">Actions</TableHead>
         </TableRow>
@@ -103,6 +128,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               <TableCell><Skeleton className="h-4 w-8 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
+              {/* <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell> */}
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
@@ -120,13 +146,23 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
               <TableCell className="text-foreground dark:text-foreground">{employee.company_id_number || "N/A"}</TableCell>
               <TableCell className="text-foreground dark:text-foreground">{employee.designation?.designation || "N/A"}</TableCell>
               <TableCell className="text-foreground dark:text-foreground">{employee.department?.department || "N/A"}</TableCell>
-              <TableCell className="text-foreground dark:text-foreground">{getSupervisorName(employee.reports_to)}</TableCell>
+              {/* <TableCell className="text-foreground dark:text-foreground">{getSupervisorName(employee.reports_to)}</TableCell> */}
               <TableCell className="text-foreground dark:text-foreground">
                 {employee.birthdate ? new Date(employee.birthdate).toLocaleDateString("en-US", {
                   month: "long",
                   day: "numeric",
                   year: "numeric",
                 }) : "N/A"}
+              </TableCell>
+              <TableCell className="text-foreground dark:text-foreground">
+                <Badge variant={getEmploymentStatusVariant(employee.user?.employment_status)}>
+                  {employee.user?.employment_status
+                    ? employee.user.employment_status
+                        .replace(/_/g, " ")
+                        .toLowerCase()
+                        .replace(/\b\w/g, (char) => char.toUpperCase())
+                    : "N/A"}
+                </Badge>
               </TableCell>
               <TableCell>
                 <Badge

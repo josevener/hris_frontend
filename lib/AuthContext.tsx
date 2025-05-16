@@ -33,7 +33,7 @@ export function AuthProvider({
           setToken(response.data.token);
           setUser(response.data.user);
         } catch (error) {
-          // console.error("Axios sync error:", error);
+          console.error("Axios sync error:", error);
           setToken(null);
           setUser(null);
         } finally {
@@ -62,9 +62,7 @@ export function AuthProvider({
       await api.post("/api/logout");
       // console.log("Logout successful");
     } catch (error) {
-
-
-      // console.error("Logout failed:", error);
+      console.error("Logout failed:", error);
     }
   };
 
