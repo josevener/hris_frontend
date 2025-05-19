@@ -84,10 +84,10 @@ export const fetchUsers = (token: string | null) =>
   apiFetch<User[]>("/users-doesnt-have-employee", "GET", token);
 
 export const fetchDepartments = (token: string | null) =>
-  apiFetch<Department[]>("/departments", "GET", token);
+  apiFetch<Department[]>("/departments-get-all", "GET", token);
 
 export const fetchDesignations = (token: string | null) =>
-  apiFetch<Designation[]>("/designations", "GET", token);
+  apiFetch<Designation[]>("/designations-get-all", "GET", token);
 
 export const fetchEmployee = async (id: number, token: string | null) => {
   const response = await apiFetch<any>(`/employees/${id}`, "GET", token);

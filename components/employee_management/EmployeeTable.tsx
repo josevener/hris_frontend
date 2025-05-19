@@ -76,6 +76,8 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         return "outline-destructive"
       case "on_leave":
       case "suspended":
+        return "warning"
+      case "onboarding":
         return "outline-warning"
       case "pending_onboarding":
         return "outline-info"

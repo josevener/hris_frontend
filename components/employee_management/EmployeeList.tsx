@@ -368,29 +368,31 @@ const EmployeeList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" })
       <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <EmployeeAnalytics 
           icon={<Users className="h-8 w-8 text-blue-500" />} 
-          labelCount={employees.length} 
+          labelCount={employees.length > 0 ? employees.length : 0}
           labelTitle="Total Employees" />
         
         <EmployeeAnalytics 
           icon={<UserCheck className="h-8 w-8 text-green-500" />} 
           labelCount={
-            employees.filter((emp) => emp.user && emp.user.is_active > 0).length
+            employees.filter((emp) => emp.user && emp.user.is_active > 0).length > 0
+              ? employees.filter((emp) => emp.user && emp.user.is_active > 0).length : 0
           }
           labelTitle="Active Employees" />
         
         <EmployeeAnalytics 
           icon={<UserX className="h-8 w-8 text-red-500" />} 
           labelCount={
-            employees.filter((emp) => emp.user && emp.user.is_active == 0).length
+            employees.filter((emp) => emp.user && emp.user.is_active == 0).length > 0
+              ? employees.filter((emp) => emp.user && emp.user.is_active == 0).length : 0
           }
           labelTitle="Inactive Employees" />
         
         <EmployeeAnalytics 
           icon={<UserPlus className="h-8 w-8 text-yellow-500" />} 
           labelCount={
-            employees.filter((emp) => emp.user && emp.user.employment_status === "onboarding").length
+            employees.filter((emp) => emp.user && emp.user.employment_status === "onboarding").length > 0
+              ? employees.filter((emp) => emp.user && emp.user.employment_status === "onboarding").length : 0
           }
-          spanCount="" 
           labelTitle="Onboarding Employees" />
       </div>
 

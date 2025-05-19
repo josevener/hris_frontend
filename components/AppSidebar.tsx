@@ -62,6 +62,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             { title: "Attendance", url: "/employees/attendance" },
             { title: "Leave", url: "/employees/leave" },
             { title: "Salary", url: "/salary" },
+            { title: "Shift & Schedule", url: "/employees/shift-schedule" },
+            { title: "Departments", url: "/employees/departments" },
+            { title: "Designations (Positions)", url: "/employees/designations" },
+            { title: "Holidays", url: "/holidays" },
           ],
         },
         {
@@ -90,7 +94,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           icon: Settings2,
           items: [
             { title: "General", url: "/settings/general" },
-            { title: "Shift Schedule", url: "/settings/shift-schedule" },
             { title: "Payroll Configuration", url: "/settings/payroll/configuration" },
             { title: "Account", url: "/settings/account" },
             { title: "Security & Privacy", url: "/settings/security" },
