@@ -9,9 +9,9 @@ interface DeleteConfirmationProps {
 }
 
 const DeleteConfirmation: React.FC<DeleteConfirmationProps> = ({ onConfirm, onCancel, isDeleting }) => (
-  <DialogContent>
+  <DialogContent className="sm:max-w-[425px] h-auto">
     <DialogHeader>
-      <DialogTitle>Confirm Deletion</DialogTitle>
+      <DialogTitle className="mb-4">Confirm Deletion</DialogTitle>
       <DialogDescription>Are you sure you want to delete this item? This action cannot be undone.</DialogDescription>
     </DialogHeader>
     <DialogFooter>

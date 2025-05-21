@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Edit, Trash2 } from "lucide-react";
+import { MoreVertical, Trash2, Eye } from "lucide-react";
 import { Holiday, UserRole } from "@/types/department";
 import {
   Popover,
@@ -42,8 +42,8 @@ const HolidayActions: React.FC<HolidayActionsProps> = ({
             onClick={() => onView(holiday)}
             className="justify-start text-foreground dark:text-foreground dark:hover:bg-gray-700"
           >
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
+            <Eye className="mr-2 h-4 w-4" />
+            View
           </Button>
           {(userRole === "HR" || userRole === "Admin") && (
             <Button

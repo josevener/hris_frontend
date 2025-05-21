@@ -11,6 +11,7 @@ import DeleteConfirmation from "./DeleteConfirmation";
 import { User, UserRole } from "@/types/employee";
 import { useUserData } from "@/hooks/useUserData";
 import UserTable from "./UserTable";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 type SortKey = keyof User;
 

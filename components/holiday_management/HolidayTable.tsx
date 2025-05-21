@@ -1,10 +1,10 @@
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Eye, Trash2 } from "lucide-react";
 import { Holiday, UserRole, SortKey } from "@/types/department";
 import { useMemo } from "react";
-import HolidayActions from "./HolidayActions";
 import { format } from "date-fns";
+import CustomActions, { ActionItem } from "../custom_components/CustomActions";
 
 interface HolidayTableProps {
   holidays: Holiday[];
@@ -49,7 +49,23 @@ export const HolidayTable: React.FC<HolidayTableProps> = ({
       return dateString;
     }
   };
-
+  
+  const actions: ActionItem<Holiday>[] = [
+    {
+      label: "View",
+      icon: <Eye className="h-4 w-4" />,
+      onClick: (item) => handleViewProfile(item),
+    },
+    {
+      label: "Delete",
+      icon: <Trash2 className="h-4 w-4" />,
+      onClick: (item) =>
+        window.dispatchEvent(new CustomEvent("openDeleteModal", { detail: item })),
+      show: (item) => userRole === "HR" || userRole === "Admin",
+      danger: true,
+    },
+  ];
+  
   return (
     <Table className="w-full max-w-6xl bg-white dark:bg-gray-800 dark:border-gray-700">
       <TableCaption className="text-muted-foreground dark:text-gray-300">
@@ -111,11 +127,7 @@ export const HolidayTable: React.FC<HolidayTableProps> = ({
               <TableCell className="text-foreground dark:text-foreground">{holiday.type_holiday}</TableCell>
               <TableCell className="text-center">
                 <div className="flex justify-center">
-                  <HolidayActions
-                    holiday={holiday}
-                    onView={handleViewProfile}
-                    userRole={userRole}
-                  />
+                  <CustomActions item={holiday} actions={actions}/>
                 </div>
               </TableCell>
             </TableRow>
