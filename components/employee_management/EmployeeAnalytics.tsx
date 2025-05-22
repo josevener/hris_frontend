@@ -1,10 +1,6 @@
-import { Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { NumberTicker } from "../magicui/number-ticker";
-// import { Employee } from "@/types/employee";
 
 interface EmployeeAnalyticsProps {
-    // employees: Employee[];
     labelCount: number;
     spanCount?: number;
     labelTitle: string;
@@ -12,14 +8,12 @@ interface EmployeeAnalyticsProps {
 }
 
 export const EmployeeAnalytics: React.FC<EmployeeAnalyticsProps> = ({
-    // employees,
     labelCount,
     spanCount,
     labelTitle,
     icon,
 }) => {
     const workforceData = {
-        // employees: employees,
         labelCount: labelCount,
         spanCount: spanCount,
         labelTitle: labelTitle,

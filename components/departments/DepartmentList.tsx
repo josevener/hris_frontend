@@ -82,6 +82,7 @@ const DepartmentList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" 
       setIsAddDialogOpen(false);
       setNewDepartment({ department: "" });
       toast.success("Department added successfully");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to add department");
       console.error("Add error:", err);
@@ -105,6 +106,8 @@ const DepartmentList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" 
       setSelectedDepartment(null);
       setIsEditable(false);
       toast.success("Department updated successfully");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to update department");
       console.error("Update error:", err);
@@ -123,6 +126,8 @@ const DepartmentList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" 
       setIsDeleteModalOpen(false);
       setSelectedDepartment(null);
       toast.success("Department deleted successfully");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to delete department");
       console.error("Delete error:", err);
@@ -138,6 +143,8 @@ const DepartmentList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" 
       setSelectedDepartment(fullDepartmentData);
       setIsViewDialogOpen(true);
       setIsEditable(false);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error("Failed to load department details");
       console.error("View department error:", err);

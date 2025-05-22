@@ -105,6 +105,8 @@ const HolidayList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) 
       setIsAddDialogOpen(false);
       setNewHoliday({ name_holiday: "", date_holiday: "", type_holiday: "" });
       toast.success("Holiday added successfully");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to add holiday");
       console.error("Add error:", err);
@@ -128,6 +130,8 @@ const HolidayList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) 
       setSelectedHoliday(null);
       setIsEditable(false);
       toast.success("Holiday updated successfully");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to update holiday");
       console.error("Update error:", err);
@@ -147,6 +151,8 @@ const HolidayList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) 
       setIsDeleteModalOpen(false);
       setSelectedHoliday(null);
       toast.success("Holiday deleted successfully");
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Delete error details:", err, "Response:", err.response);
       toast.error(err.message || "Failed to delete holiday");
@@ -162,6 +168,8 @@ const HolidayList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) 
       setSelectedHoliday(fullHolidayData);
       setIsViewDialogOpen(true);
       setIsEditable(false);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error("Failed to load holiday details");
       console.error("View holiday error:", err);

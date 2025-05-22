@@ -83,6 +83,8 @@ const DesignationList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
       setIsAddDialogOpen(false);
       setNewDesignation({ designation: "", department_id: 0 });
       toast.success("Designation added successfully");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to add designation");
       console.error("Add error:", err);
@@ -106,6 +108,8 @@ const DesignationList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
       setSelectedDesignation(null);
       setIsEditable(false);
       toast.success("Designation updated successfully");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to update designation");
       console.error("Update error:", err);
@@ -124,6 +128,8 @@ const DesignationList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
       setIsDeleteModalOpen(false);
       setSelectedDesignation(null);
       toast.success("Designation deleted successfully");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error(err.message || "Failed to delete designation");
       console.error("Delete error:", err);
@@ -138,6 +144,8 @@ const DesignationList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin"
       setSelectedDesignation(fullDesignationData);
       setIsViewDialogOpen(true);
       setIsEditable(false);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       toast.error("Failed to load designation details");
       console.error("View designation error:", err);

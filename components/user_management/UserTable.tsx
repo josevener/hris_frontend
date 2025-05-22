@@ -66,9 +66,9 @@ const UserTable: React.FC<UserTableProps> = ({
           <TableHead className="cursor-pointer dark:text-gray-200" onClick={() => handleSort("created_at")}>
             Joined Date <SortIcon column="created_at" />
           </TableHead>
-          <TableHead className="cursor-pointer dark:text-gray-200" onClick={() => handleSort("is_active")}>
+          {/* <TableHead className="cursor-pointer dark:text-gray-200" onClick={() => handleSort("is_active")}>
             Status <SortIcon column="is_active" />
-          </TableHead>
+          </TableHead> */}
           <TableHead className="w-[150px] text-center dark:text-gray-200">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -82,7 +82,7 @@ const UserTable: React.FC<UserTableProps> = ({
               <TableCell><Skeleton className="h-4 w-16 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-16 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-24 dark:bg-gray-600" /></TableCell>
-              <TableCell><Skeleton className="h-4 w-12 dark:bg-gray-600" /></TableCell>
+              {/* <TableCell><Skeleton className="h-4 w-12 dark:bg-gray-600" /></TableCell> */}
               <TableCell className="text-center"><Skeleton className="h-8 w-20 mx-auto dark:bg-gray-600" /></TableCell>
             </TableRow>
           ))
@@ -95,11 +95,11 @@ const UserTable: React.FC<UserTableProps> = ({
               <TableCell className="dark:text-gray-200">{user.phone_number ? user.phone_number : "N/A"}</TableCell>
               <TableCell className="dark:text-gray-200">{user.role_name}</TableCell>
               <TableCell className="dark:text-gray-200">{formatDate(user.created_at)}</TableCell>
-              <TableCell className="dark:text-gray-200">
+              {/* <TableCell className="dark:text-gray-200">
               <Badge variant={user.is_active ? "outline-success" : "outline-destructive"}>
                 {user.is_active ? "Active" : "Inactive"}
               </Badge>
-              </TableCell>
+              </TableCell> */}
               <TableCell className="text-center">
                 <div className="flex justify-center">
                   <UserActions

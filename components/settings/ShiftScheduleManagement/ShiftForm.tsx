@@ -163,15 +163,15 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
 
   return (
     <DialogContent className="max-w-[75vw] w-[1200px] shadow-lg rounded-lg">
-      <DialogHeader className="mb-6">
-        <DialogTitle className="text-3xl font-bold text-center text-gray-800">
+      <DialogHeader className="mb-3">
+        <DialogTitle className="text-2xl font-bold text-center text-gray-800">
           {isViewMode ? "View Shift Schedule" : isEditMode ? "Edit Shift Schedule" : "Create Shift Schedule"}
         </DialogTitle>
-        <DialogDescription className="text-sm text-center text-gray-500">
+        <DialogDescription className="text-xs text-center text-gray-500">
           Fill up the required information to manage shifts.
         </DialogDescription>
       </DialogHeader>
-      <div className="flex flex-row gap-8 py-4">
+      <div className="flex flex-row gap-8 py-1">
         <div className="flex flex-col gap-4 w-1/2">
           <div className="flex items-center gap-2">
             <Checkbox
@@ -384,7 +384,7 @@ const ShiftForm: React.FC<ShiftFormProps> = ({
         </div>
       </div>
 
-      <DialogFooter className="flex justify-end gap-3 mt-6">
+      <DialogFooter className="flex justify-end">
         {isViewMode && onEditToggle && (
           <Button
             variant="outline"

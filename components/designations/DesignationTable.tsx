@@ -1,9 +1,9 @@
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Eye, Trash2 } from "lucide-react";
 import { Designation, Department, UserRole, SortKey } from "@/types/employee";
-import DesignationActions from "./DesignationActions";
 import { useMemo } from "react";
+import CustomActions, { ActionItem } from "../custom_components/CustomActions";
 
 interface DesignationTableProps {
   designations: Designation[];
@@ -39,6 +39,24 @@ export const DesignationTable: React.FC<DesignationTableProps> = ({
     departments.find((dept) => dept.id === departmentId)?.department || "N/A";
 
   const renderKey = useMemo(() => Date.now(), []);
+
+  const actions: ActionItem<Designation>[] = [
+    {
+      label: "View",
+      icon: <Eye className="h-4 w-4" />,
+      onClick: (item) => handleViewProfile(item),
+    },
+    {
+      label: "Delete",
+      icon: <Trash2 className="h-4 w-4" />,
+      onClick: (item) =>
+        window.dispatchEvent(new CustomEvent("openDeleteModal", { detail: item })),
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      show: (item) => userRole === "HR" || userRole === "Admin",
+      danger: true,
+    },
+  ];
 
   return (
     <Table className="w-full max-w-6xl bg-white dark:bg-gray-800 dark:border-gray-700">
@@ -83,7 +101,7 @@ export const DesignationTable: React.FC<DesignationTableProps> = ({
             </TableRow>
           ))
         ) : designations.length > 0 ? (
-          designations.map((designation, index) => (
+          designations.map((designation) => (
             <TableRow
               key={designation.id}
               className="dark:bg-gray-800 dark:hover:bg-gray-700"
@@ -95,10 +113,7 @@ export const DesignationTable: React.FC<DesignationTableProps> = ({
               </TableCell>
               <TableCell className="text-center">
                 <div className="flex justify-center">
-                  <DesignationActions
-                    designation={designation}
-                    onView={handleViewProfile}
-                    userRole={userRole}
+                  <CustomActions actions={actions} item={designation}
                   />
                 </div>
               </TableCell>

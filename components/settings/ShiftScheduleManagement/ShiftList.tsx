@@ -180,7 +180,7 @@ const ShiftList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) =>
     <div className="p-6 flex flex-col items-center bg-background text-foreground">
       <Toaster position="top-right" richColors />
       <div className="w-full max-w-6xl mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold">Shift Scheduler</h1>
+        <h1 className="text-2xl font-bold">Shift Scheduling</h1>
         <div className="flex gap-4">
           <Input
             placeholder="Search schedules..."

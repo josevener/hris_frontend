@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Archive, Plus, UserCheck, UserX } from "lucide-react";
 import UserForm from "./UserForm";
 import DeleteConfirmation from "./DeleteConfirmation";
 import { User, UserRole } from "@/types/employee";
 import { useUserData } from "@/hooks/useUserData";
 import UserTable from "./UserTable";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import CustomTabsTable from "../custom_components/CustomTabsTable";
 
 type SortKey = keyof User;
 
@@ -166,8 +166,44 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
 
   const totalPages = pagination.last_page;
 
+  const getUserTableContent = (filteredUsers: User[]) => (
+    <UserTable
+      users={filteredUsers}
+      loading={loading}
+      handleEdit={() => {}}
+      handleDelete={(user) => {
+        setSelectedUser(user);
+        setIsDeleteModalOpen(true);
+      }}
+      handleViewProfile={handleViewProfile}
+      sortConfig={sortConfig}
+      handleSort={handleSort}
+    />
+  );
+
+  const tabsData = [
+    {
+      label: "Active Users",
+      value: "active",
+      icon: UserCheck,
+      content: getUserTableContent(filteredAndSortedUsers.filter((user) => user.is_active > 0)),
+    },
+    {
+      label: "Inactive Users",
+      value: "inactive",
+      icon: UserX,
+      content: getUserTableContent(filteredAndSortedUsers.filter((user) => user.is_active < 1)),
+    },
+    {
+      label: "Archived Users",
+      value: "archived",
+      icon: Archive,
+      content: getUserTableContent(filteredAndSortedUsers.filter((user) => user.employment_status === "archived")),
+    },
+  ];
+
   return (
-    <div className="p-6 flex flex-col items-center bg-background text-foreground">
+    <div className="flex flex-col items-center bg-background text-foreground">
       <Toaster position="top-right" richColors />
       <div className="w-full max-w-6xl mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
         <h1 className="text-2xl font-bold">User Management</h1>
@@ -187,19 +223,9 @@ const UserList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) => 
       </div>
 
       {error && <div className="text-red-500 mb-4">{error}</div>}
-
-      <UserTable
-        users={filteredAndSortedUsers}
-        loading={loading}
-        handleEdit={() => {}} // Placeholder, not used
-        handleDelete={(user) => {
-          setSelectedUser(user);
-          setIsDeleteModalOpen(true);
-        }}
-        handleViewProfile={handleViewProfile}
-        sortConfig={sortConfig}
-        handleSort={handleSort}
-      />
+      <div className="w-full max-w-6xl mb-4">
+        <CustomTabsTable tabs={tabsData}/>
+      </div>
 
       {totalPages > 1 && (
         <div className="mt-4 flex items-center gap-2">

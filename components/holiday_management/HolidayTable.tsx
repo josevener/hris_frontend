@@ -43,7 +43,7 @@ export const HolidayTable: React.FC<HolidayTableProps> = ({
         console.warn(`Invalid date_holiday in HolidayTable: ${dateString}`);
         return dateString; // Fallback to raw string
       }
-      return format(date, "MMM d, yyyy");
+      return format(date, "MMMM d, yyyy");
     } catch (error) {
       console.error(`Error formatting date_holiday: ${dateString}`, error);
       return dateString;
@@ -61,6 +61,8 @@ export const HolidayTable: React.FC<HolidayTableProps> = ({
       icon: <Trash2 className="h-4 w-4" />,
       onClick: (item) =>
         window.dispatchEvent(new CustomEvent("openDeleteModal", { detail: item })),
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       show: (item) => userRole === "HR" || userRole === "Admin",
       danger: true,
     },

@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/popover";
 import { ReactNode } from "react";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface ActionItem<T = any> {
   label: string;
   icon: ReactNode;
@@ -15,6 +16,7 @@ export interface ActionItem<T = any> {
   danger?: boolean;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface CustomActionsProps<T = any> {
   item: T;
   actions: ActionItem<T>[];
@@ -32,7 +34,7 @@ const CustomActions = <T,>({ item, actions }: CustomActionsProps<T>) => {
           <MoreVertical className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-40 bg-white dark:bg-gray-800 dark:border-gray-700">
+      <PopoverContent className="w-full bg-white dark:bg-gray-800 dark:border-gray-700">
         <div className="flex flex-col gap-2">
           {actions.map((action, index) => {
             const shouldShow =
@@ -48,14 +50,14 @@ const CustomActions = <T,>({ item, actions }: CustomActionsProps<T>) => {
                 variant="ghost"
                 size="sm"
                 onClick={() => action.onClick(item)}
-                className={`justify-start ${
+                className={`w-full justify-start ${
                   action.danger
-                    ? "text-red-600 dark:text-red-400"
-                    : "text-foreground dark:text-foreground"
+                    ? "text-white dark:text-dark-400 bg-red-600"
+                    : "text-white dark:text-foreground bg-blue-600"
                 } dark:hover:bg-gray-700`}
               >
                 {action.icon}
-                <span className="ml-2">{action.label}</span>
+                <span >{action.label}</span>
               </Button>
             );
           })}
