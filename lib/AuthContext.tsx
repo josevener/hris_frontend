@@ -29,7 +29,7 @@ export function AuthProvider({
         // console.log("No initial data, syncing with /api/auth-data");
         try {
           const response = await api.get("/api/auth-data");
-          // console.log("Axios auth data:", response.data);
+          console.log("Axios auth data:", response.data);
           setToken(response.data.token);
           setUser(response.data.user);
         } catch (error) {

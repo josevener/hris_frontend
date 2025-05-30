@@ -17,11 +17,11 @@ export async function middleware(request: NextRequest) {
     "/profile",
   ].some((route) => requestedPath.startsWith(route));
 
-  console.log(`Middleware check: ${requestedPath} - Token: ${token || "none"}`);
+  // console.log(`Middleware check: ${requestedPath} - Token: ${token || "none"}`);
 
   // If no token and trying to access a protected route, redirect to login
   if (!token && isProtectedRoute) {
-    console.log(`Redirecting to /login from ${requestedPath}`);
+    // console.log(`Redirecting to /login from ${requestedPath}`);
     return NextResponse.redirect(
       new URL(`/login?redirect=${requestedPath}`, request.url)
     );
@@ -34,11 +34,11 @@ export async function middleware(request: NextRequest) {
         ? previousPath
         : "/dashboard";
 
-    console.log(`Redirecting from /login to ${redirectPath}`);
+    // console.log(`Redirecting from /login to ${redirectPath}`);
     return NextResponse.redirect(new URL(redirectPath, request.url));
   }
 
-  console.log(`Allowing access to ${requestedPath}`);
+  // console.log(`Allowing access to ${requestedPath}`);
   return NextResponse.next();
 }
 

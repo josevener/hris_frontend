@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   const { email, password } = await request.json();
   try {
     const response = await axios.post(
-      "https://hris-livid.vercel.app/api/login",
+      `${process.env.NEXT_PUBLIC_API_URL}/login`,
       {
         email,
         password,
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     );
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
-    console.error("Login error:", error);
+    // console.error("Login error:", error);
     return NextResponse.json({ message: "Login failed" }, { status: 401 });
   }
 }
