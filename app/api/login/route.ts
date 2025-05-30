@@ -6,7 +6,7 @@ export async function POST(request: Request) {
   const { email, password } = await request.json();
   try {
     const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_API_URL}/login`,
+      `127.0.0.1:8000/api/login`,
       {
         email,
         password,
