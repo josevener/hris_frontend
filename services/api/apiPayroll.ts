@@ -6,7 +6,7 @@ import {
 } from "@/types/payroll";
 import { Employee } from "@/types/employee";
 
-const BASE_URL = "http://127.0.0.1:8000/api";
+const BASE_URL = process.env.$NEXT_PUBLIC_API_URL;
 
 const getAuthToken = () => getCookie("auth_token");
 
