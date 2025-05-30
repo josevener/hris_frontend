@@ -37,7 +37,7 @@ export function NavUser() {
 
   // Redirect to login if no user is authenticated
   if (!loading && !user) {
-    router.push("/login");
+    // router.push("/login");
     return null; // Render nothing while redirecting
   }
 

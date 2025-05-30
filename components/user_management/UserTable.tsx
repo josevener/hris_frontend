@@ -3,13 +3,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@/types/employee";
 import UserActions from "./UserActions";
 import { ChevronUp, ChevronDown } from "lucide-react";
-import { Badge } from "../ui/badge";
+import { differenceInHours, parseISO } from "date-fns";
 
 interface UserTableProps {
   users: User[];
   loading: boolean;
-  handleEdit: (user: User) => void; // Still passed but not used in UserActions
-  handleDelete: (user: User) => void; // Still passed but not used in UserActions
+  handleEdit: (user: User) => void;
+  handleDelete: (user: User) => void;
   handleViewProfile: (user: User) => void;
   sortConfig: { key: keyof User; direction: "asc" | "desc" } | null;
   handleSort: (key: keyof User) => void;
@@ -48,9 +48,9 @@ const UserTable: React.FC<UserTableProps> = ({
     <Table className="w-full max-w-6xl bg-white dark:bg-gray-800 dark:border-gray-700">
       <TableHeader>
         <TableRow className="dark:bg-gray-700">
-          <TableHead className="w-[50px] cursor-pointer dark:text-gray-200" onClick={() => handleSort("id")}>
+          {/* <TableHead className="w-[50px] cursor-pointer dark:text-gray-200" onClick={() => handleSort("id")}>
             ID <SortIcon column="id" />
-          </TableHead>
+          </TableHead> */}
           <TableHead className="cursor-pointer dark:text-gray-200" onClick={() => handleSort("lastname")}>
             Name <SortIcon column="lastname" />
           </TableHead>
@@ -69,14 +69,14 @@ const UserTable: React.FC<UserTableProps> = ({
           {/* <TableHead className="cursor-pointer dark:text-gray-200" onClick={() => handleSort("is_active")}>
             Status <SortIcon column="is_active" />
           </TableHead> */}
-          <TableHead className="w-[150px] text-center dark:text-gray-200">Actions</TableHead>
+          <TableHead className="text-center dark:text-gray-200">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {loading ? (
           Array.from({ length: 6 }).map((_, index) => (
             <TableRow key={`skeleton-${index}`} className="dark:bg-gray-800">
-              <TableCell><Skeleton className="h-4 w-8 dark:bg-gray-600" /></TableCell>
+              {/* <TableCell><Skeleton className="h-4 w-8 dark:bg-gray-600" /></TableCell> */}
               <TableCell><Skeleton className="h-4 w-32 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-32 dark:bg-gray-600" /></TableCell>
               <TableCell><Skeleton className="h-4 w-16 dark:bg-gray-600" /></TableCell>
@@ -87,10 +87,17 @@ const UserTable: React.FC<UserTableProps> = ({
             </TableRow>
           ))
         ) : users.length > 0 ? (
-          users.map((user, index) => (
+          users.map((user) => (
             <TableRow key={user.id} className="dark:bg-gray-800 dark:hover:bg-gray-700">
-              <TableCell className="dark:text-gray-200">{index + 1}</TableCell>
-              <TableCell className="dark:text-gray-200">{getFullName(user)}</TableCell>
+              {/* <TableCell className="dark:text-gray-200">{index + 1}</TableCell> */}
+              <TableCell className="dark:text-gray-200">
+                {getFullName(user)}{" "}
+                {differenceInHours(new Date(), parseISO(user.created_at)) <= 1 && (
+                  <span className="ml-2 animate-pulse bg-green-600 rounded-md text-white text-xs px-1">
+                    New
+                  </span>
+                )}
+              </TableCell>
               <TableCell className="dark:text-gray-200">{user.email}</TableCell>
               <TableCell className="dark:text-gray-200">{user.phone_number ? user.phone_number : "N/A"}</TableCell>
               <TableCell className="dark:text-gray-200">{user.role_name}</TableCell>

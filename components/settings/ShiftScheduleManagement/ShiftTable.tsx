@@ -1,7 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserRole } from "@/types/employee";
-import ShiftActions from "./ShiftActions";
 import { Shift } from "@/types/shift";
 import { format } from "date-fns";
 import { Employee } from "@/types/employee";

@@ -13,9 +13,9 @@ export default function AuthProtectedLayout({
   const router = useRouter();
 
   useEffect(() => {
-    console.log("AuthProtectedLayout - Token:", token, "Loading:", loading);
+    // console.log("AuthProtectedLayout - Token:", token, "Loading:", loading);
     if (!loading && !token) {
-      console.log("No token in AuthProtectedLayout, redirecting to /login");
+      // console.log("No token in AuthProtectedLayout, redirecting to /login");
       router.push("/login");
     }
   }, [token, loading, router]);
@@ -26,7 +26,7 @@ export default function AuthProtectedLayout({
   // }
 
   if (!token) {
-    console.log("AuthProtectedLayout - No token, rendering null");
+    // console.log("AuthProtectedLayout - No token, rendering null");
     return null;
   }
 

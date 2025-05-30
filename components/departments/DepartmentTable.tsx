@@ -2,7 +2,6 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronUp, ChevronDown, Eye, Trash2 } from "lucide-react";
 import { Department, UserRole, SortKey } from "@/types/employee";
-import DepartmentActions from "./DepartmentActions";
 import { useMemo } from "react";
 import CustomActions, { ActionItem } from "../custom_components/CustomActions";
 

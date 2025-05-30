@@ -324,10 +324,10 @@ const PayrollList: React.FC<{ userRole?: UserRole }> = ({ userRole = "Admin" }) 
   }, [payrolls, selectedPayrollIds]);
 
   return (
-    <div className="p-6 flex flex-col items-center bg-background text-foreground dark:bg-gray-900 dark:text-foreground">
+    <div className="flex flex-col items-center bg-background text-foreground dark:bg-gray-900 dark:text-foreground">
       <Toaster position="top-right" richColors />
       <div className="w-full max-w-6xl mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Payroll Management</h1>
+        <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Payroll</h1>
         <div className="flex gap-4 items-center">
           <Input
             placeholder="Search payrolls..."
