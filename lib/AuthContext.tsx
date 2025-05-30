@@ -28,7 +28,7 @@ export function AuthProvider({
       if (!initialToken || !initialUser) {
         // console.log("No initial data, syncing with /api/auth-data");
         try {
-          const response = await api.get("/api/auth-data");
+          const response = await api.get("/auth-data");
           // console.log("Axios auth data:", response.data);
           setToken(response.data.token);
           setUser(response.data.user);
