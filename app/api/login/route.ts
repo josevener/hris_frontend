@@ -5,10 +5,13 @@ import { setToken } from "@/lib/auth";
 export async function POST(request: Request) {
   const { email, password } = await request.json();
   try {
-    const response = await axios.post("http://127.0.0.1:8000/api/login", {
-      email,
-      password,
-    });
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/login`,
+      {
+        email,
+        password,
+      }
+    );
 
     const data = response.data;
 
