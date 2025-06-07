@@ -86,7 +86,7 @@ export const useUserData = () => {
       setError(null);
 
       const userData = await fetchUsers(page);
-      console.log("Fetched users:", userData);
+      // console.log("Fetched users:", userData);
       setUsers(userData.data); // Extract the 'data' array
       setPagination({
         current_page: userData.current_page,
@@ -97,7 +97,7 @@ export const useUserData = () => {
     } catch (err: any) {
       setError(err.message || "Failed to fetch user data.");
       toast.error(err.message || "Failed to fetch user data.");
-      console.error("Error fetching user data:", err);
+      // console.error("Error fetching user data:", err);
       setUsers([]); // Fallback to empty array on error
     } finally {
       setLoading(false);
@@ -116,7 +116,7 @@ export const useUserData = () => {
     } catch (err: any) {
       setError(err.message || "Failed to add user.");
       toast.error(err.message || "Failed to add user.");
-      console.error("Error adding user:", err);
+      // console.error("Error adding user:", err);
       throw err;
     }
   };
@@ -129,7 +129,7 @@ export const useUserData = () => {
     } catch (err: any) {
       setError(err.message || "Failed to edit user.");
       toast.error(err.message || "Failed to edit user.");
-      console.error("Error editing user:", err);
+      // console.error("Error editing user:", err);
       throw err;
     }
   };
@@ -141,7 +141,7 @@ export const useUserData = () => {
     } catch (err: any) {
       setError(err.message || "Failed to remove user.");
       toast.error(err.message || "Failed to remove user.");
-      console.error("Error removing user:", err);
+      // console.error("Error removing user:", err);
       throw err;
     }
   };

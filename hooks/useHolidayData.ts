@@ -47,7 +47,7 @@ export const useHolidayData = (): UseHolidayData => {
           1,
           100
         );
-        console.log("Holiday API response:", holidayResponse); // Debug log
+        // console.log("Holiday API response:", holidayResponse); // Debug log
         if (!Array.isArray(holidayResponse.data)) {
           throw new Error("Invalid holiday data format");
         }
@@ -57,7 +57,7 @@ export const useHolidayData = (): UseHolidayData => {
           err.message || "Failed to load holiday data. Please try again.";
         setError(errorMessage);
         toast.error(errorMessage);
-        console.error("Error fetching holiday data:", err);
+        // console.error("Error fetching holiday data:", err);
         setHolidays([]); // Reset holidays to prevent further errors
       } finally {
         setLoading(false);

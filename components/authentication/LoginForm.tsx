@@ -19,17 +19,18 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const router = useRouter();
   const { login } = useAuth();
-
+  const BASE_URL_API = process.env.NEXT_PUBLIC_API_URL;
+  
   useEffect(() => {
     const fetchCsrfToken = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:8000/sanctum/csrf-cookie", {
+        const response = await fetch(`${BASE_URL_API}/sanctum/csrf-cookie`, {
           method: "GET",
           credentials: "include",
         });
         if (!response.ok) throw new Error(`Failed to fetch CSRF token: ${response.status}`);
         setCsrfToken("fetched");
-        console.log("CSRF token fetched successfully");
+        // console.log("CSRF token fetched successfully");
       } catch (err) {
         console.error("Error fetching CSRF token:", err);
         toast.error("Failed to initialize login session");
@@ -37,6 +38,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
     };
     fetchCsrfToken();
   }, []);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,9 +55,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
         body: JSON.stringify({ email, password }),
       });
 
-      console.log("Login response status:", response.status);
+      // console.log("Login response status:", response.status);
       const data = await response.json();
-      console.log("Login response data:", data);
+      // console.log("Login response data:", data);
 
       if (!response.ok) throw new Error(data.message || "Login failed");
 
@@ -73,12 +75,12 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card className="overflow-hidden">
-        <CardContent className="grid p-0 md:grid-cols-2">
-          <div className="relative hidden bg-muted md:flex md:h-96 md:items-center md:justify-center">
+        <CardContent className="grid p-0 md:grid-cols-2 md:min-h-96">
+          <div className="relative hidden md:flex items-center justify-center bg-white h-full min-h-96">
             <img
               src="/assets/images/bfd.jpg"
               alt="BFD Logo"
-              className="h-full w-full object-cover object-center"
+              className="object-contain max-h-full max-w-full block mx-auto px-2"
             />
           </div>
 
@@ -105,9 +107,6 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
               <div className="grid gap-2">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <a href="#" className="ml-auto text-sm underline-offset-2 hover:underline">
-                    Forgot your password?
-                  </a>
                 </div>
                 <Input
                   id="password"
@@ -117,6 +116,9 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                   required
                   disabled={loading}
                 />
+                <a href="#" className="ml-auto text-sm underline-offset-2 hover:underline">
+                    Forgot your password?
+                </a>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Logging in..." : "Login"}

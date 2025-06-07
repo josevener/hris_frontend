@@ -4,14 +4,13 @@ import { setToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   const { email, password } = await request.json();
+
+  const BASE_URL_API = process.env.NEXT_PUBLIC_API_URL;
   try {
-    const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_API_URL}/login`,
-      {
-        email,
-        password,
-      }
-    );
+    const response = await axios.post(`${BASE_URL_API}/api/login`, {
+      email,
+      password,
+    });
 
     const data = response.data;
 
@@ -27,7 +26,7 @@ export async function POST(request: Request) {
     );
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
-    // console.error("Login error:", error);
+    console.error("Login error:", error);
     return NextResponse.json({ message: "Login failed" }, { status: 401 });
   }
 }

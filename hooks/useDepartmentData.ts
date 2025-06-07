@@ -36,7 +36,7 @@ export const useDepartmentData = (): UseDepartmentData => {
       } catch (err) {
         setError("Failed to load department data. Please try again.");
         toast.error("Failed to load department data");
-        console.error("Error fetching department data:", err);
+        // console.error("Error fetching department data:", err);
       } finally {
         setLoading(false);
       }

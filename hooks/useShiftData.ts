@@ -70,7 +70,7 @@ export const useShiftData = () => {
       } catch (err: any) {
         setError(err.message || "Failed to fetch shift data.");
         toast.error(err.message || "Failed to fetch shift data.");
-        console.error("Error fetching shift data:", err);
+        // console.error("Error fetching shift data:", err);
       } finally {
         setLoading(false);
       }

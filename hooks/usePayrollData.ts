@@ -55,7 +55,7 @@ export const usePayrollData = (): UsePayrollData => {
       } catch (err: any) {
         setError("Failed to load payroll data. Please try again.");
         toast.error("Failed to load payroll data");
-        console.error("Error fetching data:", err);
+        // console.error("Error fetching data:", err);
       } finally {
         setLoading(false);
       }

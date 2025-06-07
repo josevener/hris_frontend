@@ -43,9 +43,9 @@ export const usePayrollItemData = () => {
             fetchPayrollCycles(),
           ]);
 
-        console.log("Fetched payroll items:", payrollItemData);
-        console.log("Fetched employees:", employeeData);
-        console.log("Fetched payroll cycles:", payrollCycleData);
+        // console.log("Fetched payroll items:", payrollItemData);
+        // console.log("Fetched employees:", employeeData);
+        // console.log("Fetched payroll cycles:", payrollCycleData);
 
         const enrichedPayrollItems = payrollItemData.map((item) => ({
           ...item,
@@ -60,7 +60,7 @@ export const usePayrollItemData = () => {
       } catch (err: any) {
         setError(err.message || "Failed to fetch payroll item data.");
         toast.error(err.message || "Failed to fetch payroll item data.");
-        console.error("Error fetching payroll item data:", err);
+        // console.error("Error fetching payroll item data:", err);
       } finally {
         setLoading(false);
       }

@@ -8,7 +8,7 @@ import {
   Document,
 } from "../../types/employee";
 
-const BASE_URL = process.env.$NEXT_PUBLIC_API_URL;
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
 const apiFetch = async <T>(
   endpoint: string,

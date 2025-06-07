@@ -24,23 +24,23 @@ export const usePayslipData = (): UsePayslipData => {
         setError(null);
 
         const payslipData = await fetchPayslips(token);
-        console.log("Raw payslipData:", payslipData);
-        console.log("User:", user);
+        // console.log("Raw payslipData:", payslipData);
+        // console.log("User:", user);
         const filteredPayslips =
           user?.role_name === "Employee"
             ? payslipData.filter((p) => {
                 const matches = p.employee_id === user.employee_id;
-                console.log(
-                  `Payslip ID ${p.id}: employee_id=${p.employee_id}, user.employee_id=${user.employee_id}, matches=${matches}`
-                );
+                // console.log(
+                //   `Payslip ID ${p.id}: employee_id=${p.employee_id}, user.employee_id=${user.employee_id}, matches=${matches}`
+                // );
                 return matches;
               })
             : payslipData;
-        console.log("Filtered payslips:", filteredPayslips);
+        // console.log("Filtered payslips:", filteredPayslips);
         if (user?.role_name === "Employee" && !user?.employee_id) {
-          console.warn(
-            "Warning: user.employee_id is undefined for Employee role"
-          );
+          // console.warn(
+          //   "Warning: user.employee_id is undefined for Employee role"
+          // );
           setError("Unable to filter payslips: user employee ID is missing.");
           toast.error("Cannot display payslips: user configuration error.");
         }
@@ -48,7 +48,7 @@ export const usePayslipData = (): UsePayslipData => {
       } catch (err) {
         setError("Failed to load payslips. Please try again.");
         toast.error("Failed to load payslips");
-        console.error("Error fetching payslips:", err);
+        // console.error("Error fetching payslips:", err);
       } finally {
         setLoading(false);
       }

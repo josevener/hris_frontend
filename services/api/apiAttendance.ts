@@ -1,7 +1,7 @@
 import { Attendance } from "@/types/attendance";
 import { getCookie } from "@/lib/auth";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
 
 const apiFetch = async <T>(
   endpoint: string,

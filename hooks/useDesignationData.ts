@@ -57,7 +57,7 @@ export const useDesignationData = (): UseDesignationData => {
       } catch (err: any) {
         setError("Failed to load designation data. Please try again.");
         toast.error(err.message || "Failed to load designation data");
-        console.error("Error fetching designation data:", err);
+        // console.error("Error fetching designation data:", err);
       } finally {
         setLoading(false);
       }

@@ -35,8 +35,8 @@ export const useAttendanceData = () => {
           fetchEmployees(token),
         ]);
 
-        console.log("Fetched attendances:", attendanceData);
-        console.log("Fetched employees:", employeeData);
+        // console.log("Fetched attendances:", attendanceData);
+        // console.log("Fetched employees:", employeeData);
 
         const validAttendanceData = Array.isArray(attendanceData)
           ? attendanceData

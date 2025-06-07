@@ -53,7 +53,7 @@ export const useEmployeeData = (): UseEmployeeData => {
       } catch (err) {
         setError("Failed to load initial data. Please try again.");
         toast.error("Failed to load initial data");
-        console.error("Error fetching data:", err);
+        // console.error("Error fetching data:", err);
       } finally {
         setLoading(false);
       }

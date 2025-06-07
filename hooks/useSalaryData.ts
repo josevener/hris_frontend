@@ -29,8 +29,8 @@ export const useSalaryData = () => {
           fetchEmployees(token), // Fetch all employees
         ]);
 
-        console.log("Fetched salaries:", salaryData);
-        console.log("Fetched employees:", employeeData);
+        // console.log("Fetched salaries:", salaryData);
+        // console.log("Fetched employees:", employeeData);
 
         // Enrich salaries with employee data
         const enrichedSalaries = salaryData.map((salary) => ({
@@ -47,7 +47,7 @@ export const useSalaryData = () => {
       } catch (err: any) {
         setError(err.message || "Failed to fetch data.");
         toast.error(err.message || "Failed to fetch data.");
-        console.error("Error fetching data:", err);
+        // console.error("Error fetching data:", err);
       } finally {
         setLoading(false);
       }
@@ -75,7 +75,7 @@ export const useSalaryData = () => {
     } catch (err: any) {
       setError(err.message || "Failed to add salary.");
       toast.error(err.message || "Failed to add salary.");
-      console.error("Error adding salary:", err);
+      // console.error("Error adding salary:", err);
       throw err;
     }
   };
@@ -98,7 +98,7 @@ export const useSalaryData = () => {
     } catch (err: any) {
       setError(err.message || "Failed to edit salary.");
       toast.error(err.message || "Failed to edit salary.");
-      console.error("Error editing salary:", err);
+      // console.error("Error editing salary:", err);
     }
   };
 
@@ -120,7 +120,7 @@ export const useSalaryData = () => {
     } catch (err: any) {
       setError(err.message || "Failed to remove salary.");
       toast.error(err.message || "Failed to remove salary.");
-      console.error("Error removing salary:", err);
+      // console.error("Error removing salary:", err);
     }
   };
 
